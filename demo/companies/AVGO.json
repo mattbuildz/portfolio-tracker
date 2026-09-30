@@ -1,0 +1,224 @@
+{
+  "ticker": "AVGO",
+  "name": "Broadcom Inc.",
+  "as_of": "2026-09-20",
+  "fiscal_note": "Fiscal year ends in early November. Fiscal Q3 FY2026 ended 2 August 2026.",
+  "disclaimer": "An example company profile, written for this demo. Figures come from SEC filings where marked; forecasts are labelled as forecasts. Not investment advice.",
+
+  "status": {
+    "value": "confirmed",
+    "label": "Thesis confirmed",
+    "reviewed": "2026-09-20",
+    "next_review": "2026-12-10",
+    "next_checkpoint": "10-K for FY2026, expected December 2026 — the first full year with the large AI contracts."
+  },
+
+  "headline": "Broadcom sells two things an AI cluster cannot be built without — a processor designed for one customer, and the network that ties those processors together — at a 69% gross margin, while its customers keep raising spend.",
+
+  "kpis": [
+    {"label": "Revenue, Q3 FY26", "value": "$29.6B", "sub": "+85.5% y/y"},
+    {"label": "AI semiconductor revenue", "value": "$16.7B", "sub": "+221% y/y"},
+    {"label": "Scorecard", "from": "scorecard"},
+    {"label": "Free cash flow", "value": "$13.7B", "sub": "46% of revenue"}
+  ],
+
+  "thesis": {
+    "summary": "The market priced Broadcom 28.5% below its June high while every one of these numbers improved. The drops after the last two reports came from results that beat by too little, not from a business getting worse.",
+    "pillars": [
+      {"title": "Operating leverage that already happened",
+       "text": "GAAP operating margin went from 26.1% in FY2024 to 48.0% over the last twelve months. Revenue +85.5% in the quarter, operating costs −6.5%. This is reported, not forecast."},
+      {"title": "Cheap when measured against growth",
+       "text": "Forward P/S on FY2027 of 9.9× against a ten-year median of 7.4×. Divided by the forecast two-year revenue CAGR of 64.8%, that is 0.15 — the method's own benchmark for an attractive price is 0.55."},
+      {"title": "A balance sheet with no near wall",
+       "text": "Not a dollar of debt matures in FY2027. Interest cost fell even as revenue grew by more than half; $10.5B of bonds were bought back in nine months."}
+    ],
+    "requires": [
+      {"title": "The FY2027 consensus lands nearer the top than the bottom",
+       "text": "Analyst forecasts run from $114.7B to $200.1B. At the low end the valuation ratio worsens from 0.15 to 0.44 and most of the margin of safety is gone."},
+      {"title": "$52.7B of FY2027 purchase commitments turn into revenue",
+       "text": "The commitments sit in the notes to the 10-Q. If they are real orders, they explain the whole forecast."},
+      {"title": "Share loss at the largest customer is slower than the market grows",
+       "text": "One analyst (Macquarie) expects Broadcom's share of Alphabet's TPUs to fall from ~95% to 65% by 2028. Fine in dollars if the pie grows fast enough."},
+      {"title": "The financing backstop stays a contingent exposure",
+       "text": "$29B maximum guarantee exposure plus up to $42B of convertible notes a customer may issue to Broadcom. None issued as of 2 August 2026."}
+    ]
+  },
+
+  "hidden_assumption": {
+    "title": "The guidance assumes only part of the capacity management can see",
+    "text": "Management says it has line of sight to roughly 30 GW of customer deployments over FY2027–28, and puts Broadcom's content at $20–30B per gigawatt. At face value that is $600–900B. The guidance for the same two years is about $345B ($115B + $230B) — enough for roughly 12–17 GW. The gap is not a demand question: management names land, power and data-centre shells as the constraint and says it judges deployment conservatively. If more of the 30 GW lands inside those two fiscal years, today's guidance is the floor, not the forecast.",
+    "gw": 30,
+    "per_gw_low": 20,
+    "per_gw_high": 30,
+    "guided": 345,
+    "guided_label": "FY27 + FY28",
+    "capacity_unit": "GW",
+    "unit": "$B, FY2027 + FY2028 AI semiconductor revenue",
+    "source": "Q3 FY2026 earnings call, held 2026-09-02 — management remarks and Q&A (Bernstein's question on revenue per gigawatt). A call, not a filing; the reported quarter is in 8-K accession 0001730168-26-000076, filed 2026-09-02."
+  },
+
+  "charts": {
+    "quarterly_revenue": {
+      "title": "Quarterly revenue and gross margin",
+      "subtitle": "Revenue per fiscal quarter, $B · line is GAAP gross margin",
+      "source": "10-Q filings: Q3 FY2026, accession 0001730168-26-000080, filed 2026-09-10; Q2 FY2026, 0001730168-26-000054, filed 2026-06-09; Q1 FY2026 (quarter ended 2026-02-01), 0001730168-26-000016; Q3 FY2025 (quarter ended 2025-08-03), 0001730168-25-000098; Q2 FY2025 (quarter ended 2025-05-04), 0001730168-25-000064; Q1 FY2025 (quarter ended 2025-02-02), 0001730168-25-000021. The FY2024 quarters are the comparatives in the three FY2025 10-Qs. Q4 FY2024 and Q4 FY2025 computed as the year in 10-K FY2025 (0001730168-25-000121, filed 2025-12-18) minus three reported quarters. Q4 FY2026 is company guidance: 8-K, accession 0001730168-26-000076, filed 2026-09-02.",
+      "points": [
+        {"q": "Q1 FY24", "rev": 11961, "gm": 61.7},
+        {"q": "Q2 FY24", "rev": 12487, "gm": 62.3},
+        {"q": "Q3 FY24", "rev": 13072, "gm": 63.9},
+        {"q": "Q4 FY24", "rev": 14054, "gm": null, "computed": true},
+        {"q": "Q1 FY25", "rev": 14916, "gm": 68.0},
+        {"q": "Q2 FY25", "rev": 15004, "gm": 68.0},
+        {"q": "Q3 FY25", "rev": 15952, "gm": 67.1},
+        {"q": "Q4 FY25", "rev": 18015, "gm": 68.0, "computed": true},
+        {"q": "Q1 FY26", "rev": 19311, "gm": 68.1},
+        {"q": "Q2 FY26", "rev": 22187, "gm": 69.5},
+        {"q": "Q3 FY26", "rev": 29591, "gm": 69.1},
+        {"q": "Q4 FY26", "rev": 34800, "gm": null, "guidance": true}
+      ]
+    },
+    "segments": {
+      "title": "Where the growth comes from",
+      "subtitle": "Revenue by segment, $B · two quarters only: the same quarter a year apart",
+      "source": "10-Q Q3 FY2026, Note 9 “Segment Information” (with the Q3 FY2025 comparative), accession 0001730168-26-000080, filed 2026-09-10.",
+      "series": ["Semiconductor solutions", "Infrastructure software"],
+      "points": [
+        {"period": "Q3 FY25", "values": [9166, 6786]},
+        {"period": "Q3 FY26", "values": [20839, 8752]}
+      ],
+      "note": "Semiconductors +127%, software +29%. Software fell from 43% to 30% of revenue by growing three times slower, not by shrinking."
+    },
+    "annual_revenue": {
+      "title": "Two jumps, not one line",
+      "subtitle": "Annual revenue, $B · dashed bars are analyst consensus, not results",
+      "source": "10-K FY2025, accession 0001730168-25-000121, filed 2025-12-18 (FY2023–FY2025); 10-K FY2024, 0001730168-24-000139, filed 2024-12-20 (FY2022); 10-K 0001730168-23-000096 (FY2021); 10-K 0001730168-22-000118 (FY2020). FY2026–FY2027 are analyst consensus as of 2026-09-19 (stockanalysis.com), not filings.",
+      "points": [
+        {"year": "FY20", "value": 23.9},
+        {"year": "FY21", "value": 27.4},
+        {"year": "FY22", "value": 33.2},
+        {"year": "FY23", "value": 35.8},
+        {"year": "FY24", "value": 51.6},
+        {"year": "FY25", "value": 63.9},
+        {"year": "FY26", "value": 106.0, "forecast": true},
+        {"year": "FY27", "value": 173.4, "forecast": true, "low": 114.7, "high": 200.1}
+      ],
+      "note": "The FY2024 jump was bought with VMware. The second has to come from AI silicon — and only that one is still to be proven."
+    },
+    "operating_margin": {
+      "title": "Operating margin (GAAP)",
+      "subtitle": "%, mixed periods: three fiscal years, trailing twelve months, one quarter",
+      "source": "10-K FY2025, Item 7 MD&A, accession 0001730168-25-000121, filed 2025-12-18 (FY2023–FY2025); 10-Q Q3 FY2026, accession 0001730168-26-000080, filed 2026-09-10 (Q3 FY2026; TTM computed from the filings).",
+      "points": [
+        {"period": "FY23", "value": 45.2},
+        {"period": "FY24", "value": 26.1},
+        {"period": "FY25", "value": 39.9},
+        {"period": "TTM", "value": 48.0},
+        {"period": "Q3 FY26", "value": 53.9}
+      ],
+      "note": "The FY2024 dip is VMware amortisation passing through the income statement, not a weaker business."
+    },
+    "debt_maturity": {
+      "title": "When the debt comes due",
+      "subtitle": "Principal maturing, $B by fiscal year",
+      "source": "10-Q Q3 FY2026, Note 6 “Borrowings”, future principal payments as of 2026-08-02, accession 0001730168-26-000080, filed 2026-09-10.",
+      "points": [
+        {"year": "FY26 (rest)", "value": 2252},
+        {"year": "FY27", "value": 0},
+        {"year": "FY28", "value": 5127},
+        {"year": "FY29", "value": 2405},
+        {"year": "FY30", "value": 6406},
+        {"year": "FY31+", "value": 44889}
+      ],
+      "note": "Five years of maturities add up to $16.2B — about one quarter and a bit of free cash flow."
+    }
+  },
+
+  "scorecard": {
+    "method": "Four layers: financial gates, profitability, valuation against growth, and business quality.",
+    "headline": "W2",
+    "layers": [
+      {"id": "W1", "name": "Excludes", "what": "Nine financial pass/fail gates", "score": 9, "max": 9},
+      {"id": "W2", "name": "Selects", "what": "Profitability and growth", "score": 92, "max": 100},
+      {"id": "W3", "name": "Ranks", "what": "Forward P/S ÷ 2-year revenue CAGR — lower is better", "ratio": 0.15, "benchmark": 0.55},
+      {"id": "W4", "name": "Weighs", "what": "Business quality: product, market, competition", "score": 17, "max": 25}
+    ]
+  },
+
+  "invalidation": [
+    {"condition": "FY2027 AI revenue guidance drops below $100B (today ~$115B)", "where": "Earnings call, 8-K", "effect": "weakened"},
+    {"condition": "FY2026 revenue closes below $100B against a $106B consensus", "where": "10-K FY2026, Dec 2026", "effect": "weakened"},
+    {"condition": "FY2027 purchase commitments ($52.7B) fall by more than a quarter without revenue growth", "where": "10-Q, Note 10", "effect": "weakened"},
+    {"condition": "Gross margin below 60% two quarters in a row", "where": "10-Q, income statement", "effect": "weakened"},
+    {"condition": "A named XPU customer is lost", "where": "10-Q, concentration note", "effect": "broken"},
+    {"condition": "Any actual payout under the financing backstop", "where": "10-Q, Note 10", "effect": "broken"},
+    {"condition": "A customer issues convertible notes to Broadcom (today $0 of $42B)", "where": "10-Q, Note 10", "effect": "weakened"},
+    {"condition": "Credit rating cut below A− / A3, or a new bond priced above 6.5%", "where": "Rating agencies, 8-K", "effect": "weakened"},
+    {"condition": "European Commission imposes measures over VMware", "where": "EC announcements", "effect": "weakened"}
+  ],
+
+  "risks": [
+    {"title": "Five customers, one distributor",
+     "text": "The top five end customers were ~55% of quarterly revenue (from ~40% a year earlier); a single distributor was 50%.",
+     "metric": "55%", "metric_label": "of revenue from top 5"},
+    {"title": "The customer learns to be the competitor",
+     "text": "A hyperscaler that has learned to co-design a chip does not hand the skill back. Alphabet is adding suppliers; Marvell signed a $12.2B deal with the same customer.",
+     "metric": "95% → 65%", "metric_label": "TPU share by 2028 (analyst estimate)"},
+    {"title": "The supplier finances the buyer",
+     "text": "A leasing backstop and a convertible-note line let customers buy with Broadcom's balance sheet behind them. Such structures look safe until they stop being so.",
+     "metric": "$71B", "metric_label": "max. backstop + convertible line"},
+    {"title": "A forecast treated as a fact",
+     "text": "The cheapest-looking number in the profile divides by analyst consensus. The FY2027 range is 74% wide from low to high.",
+     "metric": "$115–200B", "metric_label": "FY2027 revenue consensus range"},
+    {"title": "Less recurring revenue",
+     "text": "Subscriptions and services fell from 30% to 18% of revenue as chip sales exploded — more transactional, just as transactions depend on six customers.",
+     "metric": "30% → 18%", "metric_label": "recurring share of revenue"}
+  ],
+
+  "disputes": [
+    {"question": "Can a 53.9% operating margin hold?",
+     "reading_a": {"label": "No — management says so itself",
+                   "text": "Q4 guidance puts non-GAAP operating margin at about 66% of revenue, against 67.9% just reported, on revenue about 18% higher. The mix is shifting toward silicon, which earns less than software."},
+     "reading_b": {"label": "Yes — the leverage is only starting",
+                   "text": "R&D fell to 9.8% of revenue from 19.1% a year earlier. An XPU is designed once per generation and sold in rising volume, so at $34.8B of revenue the same operating costs leave a higher margin."},
+     "unknown": "Broadcom does not report a margin for the AI business or for XPUs alone — not in the 10-Q, not in the press release. Settling this needs that number, and it is not disclosed."},
+    {"question": "Custom chips or GPUs — who is winning?",
+     "reading_a": {"label": "Custom chips, counted in units",
+                   "text": "JPMorgan expects custom accelerators to reach 54% of shipments in 2027 and 55% in 2028."},
+     "reading_b": {"label": "GPUs, counted in dollars",
+                   "text": "Bloomberg Intelligence expects GPUs to keep 81% of accelerator revenue through 2033, with custom chips at 19%."},
+     "unknown": "Both can be true at once: a custom chip is cheaper per unit, so it can lead in units long before it leads in dollars. The two forecasts measure different things and neither says so on the label."},
+    {"question": "Forward P/E — which number?",
+     "reading_a": {"label": "Cheap: about 19×",
+                   "text": "The lowest published forward P/E, 18.9×, makes Broadcom look about 16% cheaper than the sector median."},
+     "reading_b": {"label": "Not cheap: 28–35×",
+                   "text": "Other published values run 28.2× and 35×; dividing the share price by the FY2026 non-GAAP EPS consensus of $11.66 gives 30.7×."},
+     "unknown": "The values mix GAAP and non-GAAP earnings and different fiscal years in the denominator. That is why the scorecard ranks on revenue, which has one definition, and not on earnings."}
+  ],
+
+  "call": {
+    "quarter": "Q3 FY2026",
+    "date": "2026-09-02",
+    "takeaways": [
+      "Revenue $29.6B, up 86% year on year. AI semiconductor revenue more than tripled to $16.7B; XPUs were 73% of it.",
+      "Q4 guidance: revenue about $34.8B (+93%), of which AI semiconductors $21.7B (+236%). FY2026 AI revenue now about $58B, above the prior $56B.",
+      "AI revenue outlook of about $115B in FY2027 and $230B in FY2028; management says supply for both is already secured.",
+      "Capacity by customer: Anthropic 1 GW in 2026, another 5 GW in 2027 and 10 GW more in 2028 — on track to be the largest XPU customer in 2027. OpenAI 1.3 GW in 2027 and over 5 GW in 2028. Meta 3 GW through 2028.",
+      "Content per gigawatt: management says $20–30B and expects it to hold as chips get more powerful; an analyst's arithmetic from the guidance gives $11–12B.",
+      "The binding constraint named on the call is land, power and data-centre shells — not customer demand.",
+      "A financing platform with Apollo and Blackstone targets 20+ GW for OpenAI and Anthropic by end of 2028; the first $35B tranche closed in June.",
+      "Non-GAAP operating margin 67.9%; guided to about 66% in Q4 as the mix shifts toward silicon."
+    ],
+    "quotes": [
+      {"text": "Our demand actually exceeds this outlook.", "who": "Hock Tan, CEO"},
+      {"text": "we have secured the supply to again double AI revenue to approximately $115 billion", "who": "Hock Tan, CEO — on fiscal 2027"},
+      {"text": "the dollars per gigawatt will remain in the $20 billion to $30 billion level", "who": "Hock Tan, CEO — in the Q&A"}
+    ]
+  },
+
+  "sources": [
+    {"doc": "10-Q, Q3 FY2026", "id": "0001730168-26-000080", "date": "2026-09-10"},
+    {"doc": "8-K, Q3 FY2026 results (EX-99.1)", "id": "0001730168-26-000076", "date": "2026-09-02"},
+    {"doc": "10-K, FY2025", "id": "0001730168-25-000121", "date": "2025-12-18"},
+    {"doc": "Q3 FY2026 earnings call", "id": "management remarks and Q&A", "date": "2026-09-02"}
+  ]
+}

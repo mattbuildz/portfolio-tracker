@@ -1,0 +1,69 @@
+# Broker statements and exports, whatever they get named.
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+*.tsv
+*.ofx
+*.qif
+*.pdf
+
+# The app's own data files and anything shaped like them: transactions,
+# target weights, backups, the corrupt-file quarantine, version snapshots.
+portfolios.json
+portfolios.*.json
+*.backup.json
+*.corrupt.json
+# App data directory: transactions, target weights, backups.
+# Lives in the project tree for convenience — this entry is the only thing
+# keeping it out of commits. Do not remove it.
+data/
+*.db
+*.sqlite3
+
+# The demo portfolio is made up and meant to ship — the one exception to the
+# portfolios.json rule above.
+!demo/portfolios.json
+
+# API keys and fetched earnings-call transcripts: local by design, wherever
+# the data folder points. Transcripts are someone else's text.
+secrets.json
+transcripts/
+
+# Raw research material copied in by hand (full transcripts, filings).
+/AVGO/
+
+# Anything you park in here is yours and stays local.
+private/
+scratch/
+learning/
+research/
+
+# Agent session transcripts are scratch, not repository content.
+session-*.md
+
+# ---------------------------------------------------------------------------
+# Tooling
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.DS_Store
+# Local editor / assistant config — machine-specific, not for the public tree.
+.claude/
+.idea/
+.vscode/
+
+github.md
+
+# Portfolio snapshot: positions, prices, values and weights in one file.
+# Default destination is the vault, outside the repo, but
+# `portfolio-snapshot.py -o file.md` can write it here — and no rule above
+# catches .md files.
+portfolio-status.md
+
+# Windows folder junk.
+Thumbs.db
+desktop.ini

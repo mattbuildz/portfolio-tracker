@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "active": "demo0001",
+  "portfolios": [
+    {
+      "id": "demo0001",
+      "name": "Demo Portfolio",
+      "realised_opening": 0.0,
+      "meta": {
+        "AVGO": {"name": "Broadcom", "target": 28.0},
+        "AMD": {"name": "Advanced Micro Devices", "target": 21.0},
+        "MU": {"name": "Micron Technology", "target": 17.0},
+        "SNOW": {"name": "Snowflake", "target": 13.0},
+        "CRDO": {"name": "Credo Technology", "target": 21.0}
+      },
+      "transactions": [
+        {"id": "demo00000001", "date": "2026-01-23", "kind": "buy", "ticker": "AMD", "shares": 9, "price": 417.35, "fee": 0, "note": "made-up demo trade"},
+        {"id": "demo00000002", "date": "2026-02-10", "kind": "buy", "ticker": "AVGO", "shares": 19, "price": 331.25, "fee": 0, "note": "made-up demo trade"},
+        {"id": "demo00000003", "date": "2026-03-03", "kind": "buy", "ticker": "MU", "shares": 7, "price": 612.8, "fee": 0, "note": "made-up demo trade"},
+        {"id": "demo00000004", "date": "2026-04-14", "kind": "buy", "ticker": "SNOW", "shares": 17, "price": 286.1, "fee": 0, "note": "made-up demo trade"},
+        {"id": "demo00000005", "date": "2026-05-05", "kind": "buy", "ticker": "CRDO", "shares": 27, "price": 151.3, "fee": 0, "note": "made-up demo trade"},
+        {"id": "demo00000006", "date": "2026-06-15", "kind": "buy", "ticker": "AVGO", "shares": 7, "price": 393.6, "fee": 0, "note": "made-up demo trade"},
+        {"id": "demo00000007", "date": "2026-07-08", "kind": "buy", "ticker": "AMD", "shares": 3, "price": 561.9, "fee": 0, "note": "made-up demo trade"},
+        {"id": "demo00000008", "date": "2026-08-20", "kind": "sell", "ticker": "MU", "shares": 3, "price": 978.4, "fee": 0, "note": "made-up demo trade"},
+        {"id": "demo00000009", "date": "2026-09-01", "kind": "buy", "ticker": "CRDO", "shares": 11, "price": 204.7, "fee": 0, "note": "made-up demo trade"}
+      ]
+    }
+  ]
+}

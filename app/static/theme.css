@@ -1,0 +1,65 @@
+/* Light / dark theme. Light is the palette in index.html :root; dark overrides
+   the same tokens plus the few colours that were hard-coded in the other
+   stylesheets. Loaded last so it wins on equal specificity. */
+
+/* ---------- toggle (topbar, right of the portfolio switcher) ---------- */
+.theme-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border: 0; cursor: pointer;
+  background: var(--sunken); color: var(--muted); border-radius: var(--radius-sm);
+  transition: background .15s ease, color .15s ease;
+}
+.theme-toggle:hover { background: var(--blue-wash); color: var(--blue-ink); }
+.theme-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* show the mode a click switches to */
+.theme-toggle .ico-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .ico-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .ico-moon { display: none; }
+
+/* ---------- dark palette ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12141F;
+  --card: #1B1E2E;
+  --sunken: #252939;
+
+  --ink: #ECEEF6;
+  --body: #C3C7D8;
+  --muted: #8E93AB;
+  --faint: #5F647D;
+
+  --line: #2B2F42;
+  --line-soft: #252939;
+
+  --blue-wash: #1B3350;   --blue-ink: #62B1FF;
+  --teal-wash: #12403F;
+  --red-wash:  #4A2029;
+  --amber-wash:#463612;   --amber-ink: #FFC760;
+  --purple-wash:#33285A;
+
+  --shadow: 0 0 30px 0 rgba(0,0,0,.25);
+  --shadow-lift: 0 4px 20px 0 rgba(0,0,0,.35);
+  --shadow-pop: 0 10px 40px 0 rgba(0,0,0,.55);
+
+  --co-purple-ink: #C1A6FF;
+  --co-teal-ink: #4FD9D1;
+  --co-red-ink: #FF8A98;
+  --co-blue-soft: #2F5F94;
+  --co-blue-computed: #3B75B5;
+  --co-insight-line: #4A3D7D;
+  --co-insight-wash: #241F3C;
+  --co-mark: #6B5A16;
+  --co-cell-line: #454A63;
+}
+:root[data-theme="dark"] .kpi-dot.t { color: var(--co-teal-ink); }
+:root[data-theme="dark"] .insight { background: linear-gradient(90deg, #1E2540 0%, #2A2245 100%); }
+:root[data-theme="dark"] .dd-tkr { background: rgba(255,255,255,.08); }
+:root[data-theme="dark"] .dd-tkr:hover { background: var(--blue); }
+:root[data-theme="dark"] .donut-tip { background: #0C0E17; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+:root[data-theme="dark"] .banner.bad { color: var(--co-red-ink); }
+:root[data-theme="dark"] .btn-buy { color: var(--co-teal-ink); }
+:root[data-theme="dark"] .btn-buy:hover { background: #185A58; color: #7FEDE6; }
+:root[data-theme="dark"] .btn-sell:hover { background: #63293A; color: #FFA3AE; }
+:root[data-theme="dark"] .pf-switch:hover { background: var(--blue-wash); color: var(--blue-ink); }
+:root[data-theme="dark"] .demo-toggle button.active { box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+:root[data-theme="dark"] dialog::backdrop { background: rgba(0,0,0,.65); }

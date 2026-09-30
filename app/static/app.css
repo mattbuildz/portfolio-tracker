@@ -1,0 +1,122 @@
+/* Additions to the prototype's stylesheet, which this file never overrides:
+   the portfolio switcher, the holdings editor, and the states a prototype
+   with hard-coded data never had — empty, unpriced, saving. */
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ---------- portfolio switcher ---------- */
+.switcher { position: relative; }
+.pf-switch {
+  display: flex; align-items: center; gap: 8px;
+  border: 0; background: var(--sunken); color: var(--ink);
+  font-size: 13px; font-weight: 600;
+  border-radius: var(--radius-sm); padding: 9px 14px;
+  transition: background .15s ease, color .15s ease;
+}
+.pf-switch:hover { background: var(--blue-wash); color: var(--blue-ink); }
+.pf-switch .caret { color: var(--faint); font-size: 10px; }
+.pf-menu {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 40;
+  min-width: 290px; padding: 6px;
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  display: grid; gap: 2px;
+}
+.pf-menu[hidden] { display: none; }   /* display:grid must not beat [hidden] */
+.pf-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; text-align: left;
+  border: 0; background: transparent; color: var(--body);
+  font-size: 13px; font-weight: 500;
+  border-radius: var(--radius-sm); padding: 9px 11px;
+  transition: background .12s ease, color .12s ease;
+}
+.pf-item:hover { background: var(--sunken); color: var(--ink); }
+.pf-item.active { background: var(--blue-wash); color: var(--blue-ink); font-weight: 700; }
+.pf-item .count { margin-left: auto; font-size: 11.5px; color: var(--faint); }
+.pf-item.active .count { color: var(--blue-ink); }
+.pf-item .kill {
+  border: 0; background: transparent; color: var(--faint);
+  border-radius: 6px; padding: 2px 6px; line-height: 1; font-size: 15px;
+}
+.pf-item .kill:hover { background: var(--red-wash); color: var(--red); }
+.pf-sep { height: 1px; background: var(--line); margin: 5px 3px; }
+
+/* ---------- states the prototype's dummy data never reached ---------- */
+.snapshot-status.stale { color: var(--amber-ink); font-weight: 600; }
+.snapshot-status.bad { color: var(--red); font-weight: 600; }
+.banner.bad { background: var(--red-wash); color: #A3232F; }
+.empty-note { padding: 26px 24px; margin: 0; color: var(--muted); font-size: 13px; }
+.pending { color: var(--faint); font-weight: 400; }
+.chip-unpriced {
+  display: inline-block; font-size: 10.5px; font-weight: 700;
+  color: var(--red); background: var(--red-wash);
+  border-radius: 5px; padding: 1px 7px; margin-top: 3px;
+}
+
+/* ---------- holdings editor ---------- */
+table.positions.editor td { font-weight: 500; }
+.cell {
+  width: 100px; text-align: right;
+  font-family: var(--sans); font-variant-numeric: tabular-nums;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  padding: 8px 10px; border: 0; border-radius: var(--radius-sm);
+  background: var(--sunken);
+  transition: background .15s ease, box-shadow .15s ease;
+}
+.cell:focus {
+  outline: 0; background: var(--card);
+  box-shadow: 0 0 0 2px var(--blue), 0 0 0 5px var(--blue-wash);
+}
+.cell.ticker { width: 96px; text-align: left; font-family: var(--mono); text-transform: uppercase; }
+.cell.coname { width: 190px; text-align: left; font-weight: 500; }
+.cell.avg { box-shadow: inset 0 0 0 1px var(--blue-wash); }
+.row-kill {
+  border: 0; background: transparent; color: var(--faint);
+  border-radius: 6px; padding: 4px 9px; font-size: 16px; line-height: 1;
+}
+.row-kill:hover { background: var(--red-wash); color: var(--red); }
+.editor-foot {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 18px 24px 4px;
+}
+.editor-foot .hint { transition: color .2s ease; }
+.editor-foot .hint.saving { color: var(--blue-ink); }
+.filenote { padding: 10px 24px 20px; margin: 0; font-size: 11.5px; color: var(--faint); }
+.filenote code { font-family: var(--mono); color: var(--muted); }
+
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { background: #E23C4E; color: #fff; }
+
+#dlg-confirm .dlg-body p { color: var(--body); font-size: 13.5px; line-height: 1.55; }
+
+/* ---------- buy ---------- */
+.btn-buy { background: var(--teal-wash); color: #0B8F89; }
+.btn-buy:hover { background: #A9F0ED; color: #06726D; }
+.btn-buy-go { background: var(--teal); color: #fff; }
+.btn-buy-go:hover { background: #17ADA6; color: #fff; }
+#dlg-buy .dlg-foot { justify-content: flex-end; }
+#dlg-buy .dlg-foot .hint { margin-right: auto; color: var(--red); font-weight: 600; }
+#dlg-buy .dlg-head .btn { padding: 4px 10px; }
+.buy-effect {
+  margin: 0; padding: 14px 16px;
+  background: var(--sunken); border-radius: var(--radius-sm);
+  font-size: 12.5px; line-height: 1.6; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.buy-effect b { color: var(--ink); font-weight: 600; }
+.buy-effect .was { color: var(--faint); }
+
+/* ---------- sell ----------
+   Buy's rules with the palette's red in place of its teal: the two buttons sit
+   side by side in the header, and colour is what tells them apart at a glance. */
+.btn-sell { background: var(--red-wash); color: var(--red); }
+.btn-sell:hover { background: #FFCCD2; color: #C22A3B; }
+.btn-sell-go { background: var(--red); color: #fff; }
+.btn-sell-go:hover { background: #E23C4E; color: #fff; }
+#dlg-sell .dlg-foot { justify-content: flex-end; }
+#dlg-sell .dlg-foot .hint { margin-right: auto; color: var(--red); font-weight: 600; }
+#dlg-sell .dlg-head .btn { padding: 4px 10px; }
