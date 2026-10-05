@@ -39,6 +39,9 @@ scratch/
 learning/
 research/
 
+# Working copy of the README while it is being rewritten.
+/README.draft.md
+
 # Agent session transcripts are scratch, not repository content.
 session-*.md
 
