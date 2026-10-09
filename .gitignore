@@ -60,6 +60,7 @@ venv/
 .vscode/
 
 github.md
+claude.md
 
 # Portfolio snapshot: positions, prices, values and weights in one file.
 # Default destination is the vault, outside the repo, but
