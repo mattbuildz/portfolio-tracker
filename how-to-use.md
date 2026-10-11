@@ -93,7 +93,11 @@ replay, not a separate calculation.
 
 ## Import from XTB
 
-An XTB statement (.xlsx) enters the app with one command, run from the repository root. Dry
+In the app: **Transactions → Import XTB statement…**, pick the .xlsx, and read the result it
+shows. It only adds what is missing and refuses to write if the portfolio would not match XTB
+afterwards.
+
+The same import runs from the repository root as one command. Dry
 run first — writes nothing, only shows what would happen and whether it matches XTB:
 
 ```bash
@@ -301,7 +305,9 @@ If the destination folder is missing, the app does **not** create it and does
 not stop — it notes that on the price line.
 
 Turn off: `PORTFOLIO_NO_SNAPSHOT=1` when starting the server.
-Other path: `PORTFOLIO_SNAPSHOT_FILE=/path/file.md`.
+Other path: `PORTFOLIO_SNAPSHOT_FILE=/path/file.md`, or put that path as the only line of
+`snapshot-path.txt` in the data folder — the double-click launcher sees no shell variables,
+so the file is what makes it stick there.
 
 Facts only — how much you hold and how far from target. No verdicts.
 

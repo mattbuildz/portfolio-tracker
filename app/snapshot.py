@@ -23,11 +23,22 @@ from pathlib import Path
 
 import store
 
-# Default destination in the user's Documents folder. PORTFOLIO_SNAPSHOT_FILE
-# redirects it — a notes vault, another folder, or a dry run without writing
-# into the real one. If the folder does not exist, export() quietly does nothing.
+def _configured() -> str:
+    # The double-click launcher inherits no shell variables, so the destination
+    # can also be one line in a file beside the API key.
+    try:
+        return (store.local_dir() / "snapshot-path.txt").read_text("utf-8").strip()
+    except OSError:
+        return ""
+
+
+# Default destination in the user's Documents folder. PORTFOLIO_SNAPSHOT_FILE,
+# or failing that snapshot-path.txt in the data folder, redirects it — a notes
+# vault, another folder, or a dry run without writing into the real one. If the
+# folder does not exist, export() quietly does nothing.
 DEFAULT_OUT = Path(
     os.environ.get("PORTFOLIO_SNAPSHOT_FILE")
+    or _configured()
     or Path.home() / "Documents" / "portfolio-status.md"
 ).expanduser()
 

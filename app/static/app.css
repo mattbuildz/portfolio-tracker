@@ -92,6 +92,11 @@ table.positions.editor td { font-weight: 500; }
 .btn-danger:hover { background: #E23C4E; color: #fff; }
 
 #dlg-confirm .dlg-body p { color: var(--body); font-size: 13.5px; line-height: 1.55; }
+#dlg-import-body {
+  margin: 0; max-height: 60vh; overflow: auto; white-space: pre-wrap;
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.55; color: var(--body);
+}
+#offline-banner-text { flex: 1; }
 
 /* ---------- buy ---------- */
 .btn-buy { background: var(--teal-wash); color: #0B8F89; }

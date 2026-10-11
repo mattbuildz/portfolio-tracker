@@ -26,6 +26,8 @@ let previewExpanded = false;
 /* Allocation view only — does not change value, profit, holdings or rebalance.
    Equities: weights among companies. With bonds: % of total wealth, bond on the donut. */
 let allocWithBonds = localStorage.getItem("allocWithBonds") === "1";
+/* Order of the target-weight list only: name | now | target. */
+let targetSort = localStorage.getItem("targetSort") || "name";
 
 /* ---------- formatting (prototype) ---------- */
 function money(n, signed) {
@@ -879,7 +881,19 @@ const LOCK_SVG =
 function buildTargets() {
   const list = $("targets-list");
   list.textContent = "";
-  POSITIONS.forEach(p => {
+  for (const b of $("tgt-sort").querySelectorAll("button")) {
+    b.classList.toggle("active", b.dataset.sortBy === targetSort);
+    b.setAttribute("aria-pressed", String(b.dataset.sortBy === targetSort));
+  }
+  /* Largest first. Among equities the order by value is the order by current
+     weight, and an unpriced row counts as nothing. Ties keep the A–Z order.
+     Sorted here and not on every keystroke, so a row never moves under the
+     cursor while its weight is being typed. */
+  const size = targetSort === "now" ? (p => p.s * (p.price || 0))
+             : targetSort === "target" ? (p => p.target) : null;
+  const shown = POSITIONS.slice();
+  if (size) shown.sort((a, b) => size(b) - size(a));
+  shown.forEach(p => {
     if (!p.t || p.parked) return;   // parked bonds have no target weight
     const row = document.createElement("div");
     row.className = "tgt-row" + (p.lock ? " locked" : "");
@@ -958,6 +972,15 @@ $("targets-list").addEventListener("click", (e) => {
   const p = POSITIONS.find(x => x.t === btn.dataset.lock);
   if (!p) return;
   p.lock = !p.lock;
+  buildTargets();
+  render({ keepInputs: true });
+});
+
+$("tgt-sort").addEventListener("click", (e) => {
+  const by = e.target.dataset.sortBy;
+  if (!by) return;
+  targetSort = by;
+  localStorage.setItem("targetSort", by);
   buildTargets();
   render({ keepInputs: true });
 });
@@ -1174,6 +1197,10 @@ function renderPreview(flash) {
 }
 
 /* ---------- price snapshot line ---------- */
+/* The banner can be closed, but only for the problem it was closed on: a
+   different one, or the same one coming back after it cleared, shows again. */
+let bannerProblem = "", bannerDismissed = "";
+
 function renderSnapshot() {
   const s = SERVER.snapshot;
   const el = $("snapshot-status");
@@ -1195,21 +1222,22 @@ function renderSnapshot() {
   fetchBtn.disabled = s.status === "fetching";
   fetchBtn.textContent = s.status === "fetching" ? "Fetching…" : "Fetch prices";
 
+  bannerProblem = s.status === "failed" ? "failed" : (s.unpriced || []).join(", ");
+  if (!bannerProblem) bannerDismissed = "";
+  banner.hidden = !bannerProblem || bannerProblem === bannerDismissed;
+  $("banner-fetch").disabled = s.status === "fetching";
   if (s.status === "failed") {
-    banner.hidden = false;
     banner.classList.add("bad");
     $("offline-banner-text").innerHTML =
-      "<strong>No prices.</strong> " + s.notes.join(" · ") +
-      ". Totals use the last prices fetched, if any, and nothing is hidden — " +
-      "positions with no price at all are marked, never valued at zero silently.";
-  } else if (s.unpriced && s.unpriced.length) {
-    banner.hidden = false;
+      "<strong>The price fetch failed.</strong> " + s.notes.join(" · ") +
+      ". Check the connection and press Fetch prices. Until it works, totals use the " +
+      "last prices fetched and a position with no price at all is left out of them.";
+  } else if (bannerProblem) {
     $("offline-banner-text").innerHTML =
-      "<strong>No quote for " + s.unpriced.join(", ") + ".</strong> " +
-      "Every other ticker priced normally, so this is the symbol, not the network — " +
-      "check the spelling in the Holdings tab.";
-  } else {
-    banner.hidden = true;
+      "<strong>No price for " + bannerProblem + ".</strong> " +
+      "Its value is left out of the totals. Press Fetch prices to ask again. If it is " +
+      "still missing after that, the price source does not know this symbol — " +
+      "correct it in the Holdings tab.";
   }
 }
 
@@ -1852,6 +1880,41 @@ $("alloc-equities").addEventListener("click", () => setAllocMode(false));
 $("alloc-wealth").addEventListener("click", () => setAllocMode(true));
 
 $("btn-fetch").addEventListener("click", fetchPrices);
+$("banner-fetch").addEventListener("click", fetchPrices);
+$("banner-close").addEventListener("click", () => {
+  bannerDismissed = bannerProblem;
+  $("offline-banner").hidden = true;
+});
+
+/* ---------- XTB statement import ---------- */
+$("btn-import-xtb").addEventListener("click", () => $("import-file").click());
+$("import-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";          // so the same file can be picked again
+  if (!file) return;
+  const btn = $("btn-import-xtb");
+  btn.disabled = true;
+  btn.textContent = "Importing…";
+  let text;
+  try {
+    const url = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+    const payload = await api("/api/import/xtb", { file: url.slice(url.indexOf(",") + 1) });
+    adopt(payload);
+    text = payload.log;
+  } catch (err) {
+    text = "Not imported.\n\n" + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Import XTB statement…";
+  }
+  $("dlg-import-body").textContent = text;
+  $("dlg-import").showModal();
+});
 $("btn-add-row").addEventListener("click", addRow);
 $("btn-add-company").addEventListener("click", addRow);
 $("btn-edit-targets").addEventListener("click", () => showTab("rebalance"));
@@ -1877,5 +1940,8 @@ setInterval(() => { fetch("/api/ping").catch(() => {}); }, 60000);
 
 (async function boot() {
   adopt(await api("/api/state"));
-  followStartupFetch();
+  await followStartupFetch();
+  /* "ok" with a holding unpriced means the ledger gained a company since the
+     last fetch, so it was never asked for. Ask, instead of reporting a miss. */
+  if (SERVER.snapshot.status === "ok" && SERVER.snapshot.unpriced.length) fetchPrices();
 })();

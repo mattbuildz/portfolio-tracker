@@ -95,6 +95,11 @@ def _ticker(raw: str) -> str:
 
 
 # ------------------------------------------------------------------ extraction
+def _sheet(book: dict[str, list[dict[str, str]]], column: str, title: str) -> list[dict[str, str]]:
+    # Found by its header row: XTB has shipped the sheets in more than one order.
+    return next((rows for rows in book.values() if any(r.get(column) == title for r in rows)), [])
+
+
 def extract(book: dict[str, list[dict[str, str]]]) -> tuple[list[dict], dict[str, str], list[str], dict]:
     """Every buy and sell in the statement, plus company names for display."""
     transactions: list[dict] = []
@@ -104,21 +109,19 @@ def extract(book: dict[str, list[dict[str, str]]]) -> tuple[list[dict], dict[str
     # than merely trusted.
     broker: dict[str, dict] = {}
 
-    sheets = list(book.values())
-
     # --- sheet one: open positions ------------------------------------------
     # Two kinds of row share this table. A row with a Type (column E) is one
     # real trade. A row without one, but with a Category, is XTB's own subtotal
     # for the company — not a transaction, but exactly the number to check
     # against, so it is kept aside instead of skipped.
-    for row in sheets[0]:
+    for row in _sheet(book, "B", "Instrument/Position"):
         ticker_cell = row.get("C", "")
         if not ticker_cell or "." not in ticker_cell:
             continue
         ticker = _ticker(ticker_cell)
         kind = row.get("E", "").strip().upper()
         if not kind:
-            if row.get("D", "").strip().upper() == "STOCK":
+            if row.get("D", "").strip():
                 names[ticker] = row.get("B", ticker).strip()
                 broker[ticker] = {"shares": _num(row.get("F")), "avg_price": _num(row.get("I"))}
             continue
@@ -136,7 +139,7 @@ def extract(book: dict[str, list[dict[str, str]]]) -> tuple[list[dict], dict[str
 
     # --- sheet two: closed positions ----------------------------------------
     # One row, two transactions: it opened and it closed.
-    for row in sheets[1] if len(sheets) > 1 else []:
+    for row in _sheet(book, "X", "Position ID"):
         ticker_cell = row.get("B", "")
         if not ticker_cell or "." not in ticker_cell or ticker_cell.strip().lower() == "ticker":
             continue
@@ -196,6 +199,57 @@ def report(transactions: list[dict], names: dict, broker: dict) -> bool:
     return agreed
 
 
+def _key(t: dict):
+    # A position is bought once but can be closed in parts, each on its own
+    # day, so the id alone would swallow every sale after the first.
+    if t.get("kind") == "sell":
+        return t.get("note"), t.get("date"), round(t.get("shares") or 0, 4)
+    return t.get("note")
+
+
+def merge(existing: list[dict], transactions: list[dict]) -> tuple[list[dict], list[str]]:
+    """What a statement adds to a ledger: the rows to append, and a line for
+    each hand-typed row it recognised and brought into line with XTB."""
+    # Re-importing the same statement must not double the portfolio: XTB's own
+    # position ids come along in the note, and they are what makes a row unique.
+    seen = {_key(t) for t in existing if t.get("note")}
+    typed = [t for t in existing if not t.get("note")]
+    fresh, adopted = [], []
+    for t in transactions:
+        if _key(t) in seen:
+            continue
+        # A trade typed in before its statement arrived has no id to match on.
+        # Same company, same side, same volume is that trade: the statement's
+        # date and price replace the typed ones rather than landing beside them.
+        same = next((e for e in typed if (e.get("kind"), e.get("ticker"), round(e.get("shares") or 0, 4))
+                     == (t["kind"], t["ticker"], round(t["shares"], 4))), None)
+        if same is None:
+            fresh.append(t)
+            continue
+        typed = [e for e in typed if e is not same]
+        adopted.append(f"{t['ticker']} {t['kind']} {t['shares']:g}: hand-typed row is {t['note']}, "
+                       f"price {same.get('price')} → {t['price']}")
+        same.update(date=t["date"], price=t["price"], fee=t["fee"], note=t["note"])
+    return fresh, adopted
+
+
+def disagreements(ledger: list[dict], broker: dict) -> list[str]:
+    """Companies whose share count in the finished ledger is not what XTB holds.
+
+    report() checks the statement against itself. This checks the result, which
+    is what catches a trade that is in the ledger twice or a sale that fell in
+    a month whose statement was never imported."""
+    held, _ = fold_mod.fold(ledger)
+    ours = {t["ticker"] for t in ledger if str(t.get("note") or "").startswith("XTB #")} | set(broker)
+    off = []
+    for ticker in sorted(ours):
+        here = held.get(ticker, {}).get("shares", 0.0)
+        there = broker.get(ticker, {}).get("shares", 0.0)
+        if abs(here - there) >= 5e-5:
+            off.append(f"{ticker}: {here:.4f} shares after import, {there:.4f} at XTB")
+    return off
+
+
 # ------------------------------------------------------------------------ main
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
@@ -211,7 +265,12 @@ def main() -> int:
         print(f"no such file: {args.statement}", file=sys.stderr)
         return 1
 
-    transactions, names, warnings, broker = extract(read_workbook(args.statement))
+    try:
+        book = read_workbook(args.statement)
+    except (zipfile.BadZipFile, KeyError, ET.ParseError):
+        print("this file is not an .xlsx statement", file=sys.stderr)
+        return 1
+    transactions, names, warnings, broker = extract(book)
     if not transactions:
         print("no transactions found — is this an XTB statement?", file=sys.stderr)
         return 1
@@ -230,11 +289,23 @@ def main() -> int:
         return 1
 
     state = store.load()
-    target = next((pf for pf in state["portfolios"]
-                   if pf["name"].strip().lower() == args.into.strip().lower()), None)
+    # The app passes the id, since two portfolios may share a name.
+    target = next((pf for pf in state["portfolios"] if pf["id"] == args.into
+                   or pf["name"].strip().lower() == args.into.strip().lower()), None)
     if target is None:
         have = ", ".join(pf["name"] for pf in state["portfolios"])
         print(f"\nno portfolio named {args.into!r} — have: {have}", file=sys.stderr)
+        return 1
+
+    existing = [] if args.replace else list(target.get("transactions") or [])
+    fresh, adopted = merge(existing, transactions)
+    off = disagreements(existing + fresh, broker)
+    if off:
+        print("\nNothing imported: the portfolio would not match XTB afterwards.\n  "
+              + "\n  ".join(off)
+              + "\nToo many shares: a trade is recorded twice — strike the extra row in Transactions."
+                "\nToo few or a sale missing: import the statement that covers the missing period first.",
+              file=sys.stderr)
         return 1
 
     data_file = store.path()
@@ -242,13 +313,10 @@ def main() -> int:
         backup = data_file.with_suffix(".backup.json")
         shutil.copy2(data_file, backup)
         print(f"\nbacked up {data_file} → {backup}")
-
-    existing = [] if args.replace else list(target.get("transactions") or [])
-    # Re-importing the same statement must not double the portfolio: XTB's own
-    # position ids come along in the note, and they are what makes a row unique.
-    seen = {t.get("note") for t in existing if t.get("note")}
-    fresh = [t for t in transactions if t.get("note") not in seen]
+    for line in adopted:
+        print(f"matched {line}")
     target["transactions"] = existing + [store.new_transaction(t) for t in fresh]
+    store.retire_targets(target, {t["ticker"] for t in fresh if t["kind"] == "sell"})
 
     meta = target.setdefault("meta", {})
     for ticker, name in names.items():

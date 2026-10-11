@@ -26,10 +26,12 @@ port. A data folder is treated as a demo whenever it carries the `DEMO` marker
 from __future__ import annotations
 
 import atexit
+import base64
 import json
 import os
 import shutil
 import socket
+import subprocess
 import sys
 import tempfile
 import threading
@@ -55,6 +57,7 @@ DEMO = False                # set in main() from store.is_demo(); used for the b
 DEMO_SEED = Path(__file__).resolve().parent.parent / "demo"
 DEMO_WORK: Path | None = None   # the temp copy enter_demo made — the only thing it may delete
 STATIC = Path(__file__).parent / "static"
+IMPORT_XTB = Path(__file__).resolve().parent.parent / "scripts" / "import-xtb.py"
 
 # Closing the browser tab cannot stop a server — the page has no way to say
 # "that was the last window". Idleness can: no request for this long and the
@@ -448,10 +451,38 @@ class Handler(BaseHTTPRequestHandler):
             entry = pf.setdefault("meta", {}).setdefault(ticker, {})
             entry["name"] = str(entry.get("name") or body.get("name") or ticker).strip()
             entry.setdefault("target", 0.0)
+            if kind == "sell":
+                store.retire_targets(pf, [ticker])
             store.save(state)
             if CACHE.price_for(ticker) is None:
                 CACHE.refresh([ticker])
             return self._json(state_payload())
+
+        if route == "/api/import/xtb":
+            # Run as the same script the command line uses, so the check against
+            # XTB's totals, the backup and the refusal are one piece of code.
+            try:
+                raw = base64.b64decode(str(body.get("file") or ""), validate=True)
+            except ValueError:
+                raw = b""
+            if not raw:
+                return self._json({"error": "no statement file arrived"}, 400)
+            state = store.load()
+            with tempfile.TemporaryDirectory() as tmp:
+                statement = Path(tmp) / "statement.xlsx"
+                statement.write_bytes(raw)
+                run = subprocess.run(
+                    [sys.executable, str(IMPORT_XTB), str(statement), "--into", state["active"]],
+                    capture_output=True, encoding="utf-8", timeout=120,
+                    env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+            if run.returncode:
+                return self._json({"error": (run.stderr or run.stdout).strip()}, 400)
+            # A statement can bring in companies never priced this run.
+            missing = [h["ticker"] for h in store.holdings(store.active_portfolio(store.load()))
+                       if CACHE.price_for(h["ticker"]) is None]
+            if missing:
+                CACHE.refresh(missing)
+            return self._json(state_payload() | {"log": run.stdout.strip()})
 
         if route == "/api/split":
             # No money moves — only the share count. Kept as its own kind so

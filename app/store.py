@@ -262,8 +262,9 @@ def holdings(pf: dict) -> list[dict]:
     """The portfolio as rows on screen: one per company still held.
 
     Everything here is derived. A company with a target weight but no shares —
-    sold out of, or set up before the first purchase — still appears, because
-    its target is policy the user wrote down and a rebalance has to see it.
+    set up before the first purchase — still appears, because its target is
+    policy the user wrote down and a rebalance has to see it. One sold out of
+    does not: retire_targets takes its weight away with its last share.
     """
     folded, _ = position_fold.fold(pf["transactions"])
     meta = pf.get("meta") or {}
@@ -281,6 +282,18 @@ def holdings(pf: dict) -> list[dict]:
             "fees": pos["fees"],
         })
     return rows
+
+
+def retire_targets(pf: dict, tickers) -> None:
+    """Zero the target weight of each of these companies that has no shares left.
+
+    Called where a sale lands, not on every save: a company added back later to
+    plan a new purchase must be able to hold a weight with no shares again.
+    """
+    held, _ = position_fold.fold(pf["transactions"])
+    for ticker in tickers:
+        if ticker not in held and ticker in (pf.get("meta") or {}):
+            pf["meta"][ticker]["target"] = 0.0
 
 
 def realised(pf: dict) -> float:

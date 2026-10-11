@@ -536,10 +536,11 @@
 
   .tgt-panel { background: var(--sunken); border-radius: var(--radius-sm); padding: 16px 18px; }
   .tgt-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 10px; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-bottom: 4px;
   }
   .tgt-title { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+  .tgt-hint { margin-bottom: 10px; }
   .tgt-row {
     display: grid; grid-template-columns: 10px 44px 74px 22px 1fr;
     gap: 8px; align-items: center; padding: 4px 0;
@@ -738,6 +739,8 @@
   <div class="banner" id="offline-banner" role="status" hidden>
     <span aria-hidden="true">⚠</span>
     <div id="offline-banner-text"></div>
+    <button type="button" class="btn" id="banner-fetch">Fetch prices</button>
+    <button type="button" class="btn" id="banner-close" aria-label="Dismiss this message">✕</button>
   </div>
 
   <!-- ============================ OVERVIEW ============================ -->
@@ -900,8 +903,14 @@
           <div class="tgt-panel">
             <div class="tgt-head">
               <span class="tgt-title" id="tgt-title">Target weights</span>
-              <span class="hint">edits apply live and are saved</span>
+              <div class="demo-toggle" id="tgt-sort" role="group" aria-label="Order of the list">
+                <span>Sort</span>
+                <button type="button" data-sort-by="name">A–Z</button>
+                <button type="button" data-sort-by="now">Current</button>
+                <button type="button" data-sort-by="target">Target</button>
+              </div>
             </div>
+            <div class="hint tgt-hint">edits apply live and are saved</div>
             <div id="targets-list"></div>
             <div class="tgt-foot">
               <span class="sum-indicator" id="target-sum">Total 100.0%</span>
@@ -979,6 +988,8 @@
       </div>
       <div class="editor-foot">
         <button class="btn btn-primary" id="btn-record-tx">Record transaction…</button>
+        <button class="btn" id="btn-import-xtb">Import XTB statement…</button>
+        <input type="file" id="import-file" accept=".xlsx" hidden>
         <span class="hint" id="tx-note"></span>
       </div>
     </section>
@@ -1108,6 +1119,20 @@
     <div class="dlg-foot">
       <button class="btn" value="cancel" formnovalidate>Cancel</button>
       <button class="btn btn-primary" id="tx-submit" value="ok">Record transaction</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-import" aria-labelledby="dlg-import-title">
+  <form method="dialog">
+    <div class="dlg-head">
+      <h2 id="dlg-import-title">Import XTB statement</h2>
+    </div>
+    <div class="dlg-body" style="grid-template-columns:1fr;">
+      <pre id="dlg-import-body"></pre>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn btn-primary" value="ok">Close</button>
     </div>
   </form>
 </dialog>
