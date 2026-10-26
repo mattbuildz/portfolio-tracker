@@ -21,6 +21,7 @@ import stat
 from datetime import datetime
 from pathlib import Path
 
+import bonds as bond_terms
 import store
 
 def _configured() -> str:
@@ -65,7 +66,12 @@ def build(portfolio: dict, quotes: dict) -> tuple[list[dict], dict]:
         price = quote.get("price")
         value = (price or 0) * holding["shares"] if price is not None else 0.0
         is_parked = holding["ticker"] in parked
+        cost = holding["cost"]
+        if is_parked:   # a PLN bond's profit is its interest, not the zloty (bonds.unit_cost_at_rate)
+            unit = bond_terms.unit_cost_at_rate(portfolio["meta"][holding["ticker"]]["bond"], price)
+            cost = unit * holding["shares"] if unit else cost
         rows.append(holding | {
+            "cost_now": cost,
             "parked": is_parked,
             "target": 0.0 if is_parked else holding["target"],
             "price": price,
@@ -73,7 +79,7 @@ def build(portfolio: dict, quotes: dict) -> tuple[list[dict], dict]:
             "as_of": quote.get("as_of"),
             "as_of_kind": quote.get("as_of_kind"),
             "value": value if price is not None else 0.0,
-            "unrealised": (value - holding["cost"]) if price is not None else None,
+            "unrealised": (value - cost) if price is not None else None,
         })
 
     equities = [r for r in rows if not r["parked"]]
@@ -81,6 +87,7 @@ def build(portfolio: dict, quotes: dict) -> tuple[list[dict], dict]:
     equity_total = sum(r["value"] for r in equities if r["price"] is not None)
     bond_total = sum(r["value"] for r in bonds if r["price"] is not None)
     invested = sum(r["cost"] for r in rows)
+    basis = sum(r["cost_now"] for r in rows)       # what the profit is measured against
 
     for r in equities:
         if r["price"] is None:
@@ -98,7 +105,8 @@ def build(portfolio: dict, quotes: dict) -> tuple[list[dict], dict]:
         "equity_total": equity_total,
         "bond_total": bond_total,
         "invested": invested,
-        "unrealised": equity_total + bond_total - invested,
+        "basis": basis,
+        "unrealised": equity_total + bond_total - basis,
         "realised": store.realised(portfolio),
         "targets": sum(r["target"] for r in equities),
     }
@@ -152,7 +160,7 @@ def render(portfolio: dict, rows: list[dict], totals: dict, price_note: str) -> 
             + (f" · bonds {money(totals['bond_total'])}" if totals["bond_total"] else "")
             + f") · invested {money(totals['invested'])} · "
             f"unrealised **{totals['unrealised']:+,.2f} USD** "
-            f"({totals['unrealised'] / totals['invested'] * 100:+.1f}%)"
+            f"({totals['unrealised'] / totals['basis'] * 100:+.1f}%)"
         )
     else:
         wealth = "No positions."

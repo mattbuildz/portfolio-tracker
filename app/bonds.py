@@ -89,6 +89,22 @@ def value(spec: dict, on: date | None = None) -> float:
     return base + base * terms["rate"] * (on - opened).days / (closes - opened).days
 
 
+def unit_cost_at_rate(spec: dict | None, price: float | None) -> float | None:
+    """What one bond's face value costs in USD at the exchange rate behind `price`.
+
+    The ledger holds the USD paid on the day, at that day's NBP rate. Valued
+    against that, a PLN bond that earned interest still shows a loss whenever
+    the zloty has weakened since. Restating the cost at today's rate leaves the
+    accrued interest as the whole of the profit. None: fall back to the ledger.
+    """
+    if not spec or not price:
+        return None
+    try:
+        return price * read(spec)["nominal"] / value(spec)
+    except (SpecError, ZeroDivisionError):
+        return None
+
+
 def quote(ticker: str, spec: dict, fx: price_source.FxRate,
           on: date | None = None) -> price_source.Quote:
     if fx.pair != f"{PORTFOLIO_CURRENCY}/{SUPPORTED_CURRENCY}":

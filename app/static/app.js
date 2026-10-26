@@ -27,6 +27,8 @@ let previewExpanded = false;
    Equities: weights among companies. With bonds: % of total wealth, bond on the donut. */
 let allocWithBonds = localStorage.getItem("allocWithBonds") === "1";
 /* Order of the target-weight list only: name | now | target. */
+let returnPeriod = localStorage.getItem("returnPeriod") || "max";
+let cagrMethod = localStorage.getItem("cagrMethod") === "simple" ? "simple" : "xirr";
 let targetSort = localStorage.getItem("targetSort") || "name";
 
 /* ---------- formatting (prototype) ---------- */
@@ -90,6 +92,7 @@ function adopt(payload, opts) {
     c: h.avg_price,
     target: h.target,
     parked: Boolean(h.parked),
+    basisFx: h.basis_fx,
     price: h.price,
     as_of: h.as_of,
     as_of_kind: h.as_of_kind,
@@ -109,6 +112,7 @@ function adoptPricesOnly(payload) {
     const h = byT[p.t];
     if (!h) continue;
     p.price = h.price; p.as_of = h.as_of; p.as_of_kind = h.as_of_kind; p.source = h.source;
+    p.basisFx = h.basis_fx;
   }
   render({ keepInputs: true });
 }
@@ -205,8 +209,11 @@ function computed() {
   const rows = POSITIONS.map(p => {
     const priced = p.price !== null && p.price !== undefined;
     const v = priced ? p.s * p.price : 0;
-    const basis = p.s * p.c;
-    return { ...p, priced, v, basis, pl: priced ? v - basis : null };
+    const paid = p.s * p.c;
+    /* What the profit is measured against: for a PLN bond, the cost restated at
+       today's exchange rate, so only its interest counts (server: bond_cost_today). */
+    const basis = p.basisFx ? p.basisFx : paid;
+    return { ...p, priced, v, paid, basis, pl: priced ? v - basis : null };
   });
   const equityTotal = rows.reduce((a, r) => a + (!r.parked && r.priced ? r.v : 0), 0);
   const total = rows.reduce((a, r) => a + r.v, 0);
@@ -237,23 +244,86 @@ function computed() {
 const atTarget = (r) => !r.parked && r.d !== null && Math.abs(r.d) < 0.005;
 const stateTotal = (rows) => rows.reduce((a, r) => a + r.v, 0);
 
+/* Which slice of the portfolio the page is showing. With nothing parked there
+   is only one, and "all" is it. */
+const scopeKey = () => (allocWithBonds || !SERVER.holdings.some(h => h.parked) ? "all" : "equities");
+const realisedNow = () => (scopeKey() === "all" ? SERVER.realised : (SERVER.realised_by_scope || {}).equities) || 0;
+const realisedCounted = () => ((SERVER.realised_by_scope || {})[scopeKey()]) || 0;
+
+/* ---------- Overall profit, total return, CAGR ---------- */
+/* Computed by the server (returns.py) from the ledger and the latest prices, so
+   it moves with every fetch. This only chooses which period to show. */
+function renderReturns() {
+  const scoped = (SERVER.returns || {})[scopeKey()] || {};
+  const r = scoped[returnPeriod] || scoped.max;
+  const sel = $("return-period");
+  if (sel.value !== returnPeriod) sel.value = returnPeriod;
+  const setSub = (id, text) => { $(id).textContent = text; };
+
+  const tone = (el, n) => {
+    el.classList.toggle("gain", n !== null && n >= 0);
+    el.classList.toggle("loss", n !== null && n < 0);
+  };
+  const parkedNow = new Set(SERVER.holdings.filter(h => h.parked).map(h => h.ticker));
+  const left = (SERVER.returns_left_out || []).filter(t => scopeKey() === "all" || !parkedNow.has(t));
+  const leftNote = left.length ? " · excludes unpriced: " + left.join(", ") : "";
+  const profit = r ? r.profit : null;
+
+  $("kpi-overall").textContent = profit === null ? "—" : money(profit, true);
+  tone($("kpi-overall"), profit);
+  setSub("kpi-overall-sub", profit === null
+    ? (r && r.note ? r.note : "nothing bought yet")
+    : "realised " + money(realisedCounted(), true) + " · unrealised " +
+      money(profit - realisedCounted(), true) + leftNote);
+
+  const ret = r ? r.return_pct : null;
+  $("kpi-return").textContent = ret === null ? "—" : pct(ret, 2);
+  tone($("kpi-return"), ret);
+  setSub("kpi-return-sub", ret === null
+    ? ""
+    : "on " + money(r.invested) + " paid in · since " + r.since +
+      (r.clamped ? " (history is shorter than the period)" : ""));
+
+  const simple = cagrMethod === "simple";
+  if ($("cagr-method").value !== cagrMethod) $("cagr-method").value = cagrMethod;
+  const cagr = r ? (simple ? r.cagr_simple_pct : r.cagr_pct) : null;
+  $("kpi-cagr").textContent = cagr === null ? "—" : pct(cagr, 1);
+  tone($("kpi-cagr"), cagr);
+  let sub = "per year";
+  if (cagr === null) {
+    sub = r && r.note ? r.note : "needs a purchase and a price";
+  } else if (r.days < 365) {
+    sub = "annualised from " + (r.days / 30.4).toFixed(1) + " months — read as indicative";
+  } else {
+    sub = "per year over " + (r.days / 365).toFixed(1) + " years";
+  }
+  if (cagr !== null) sub += simple ? " · money counted as in from day one" : " · each buy counted from its own date";
+  setSub("kpi-cagr-sub", sub);
+}
+
 /* ---------- KPI row ---------- */
 function renderKpis(state) {
-  const rows = state.rows;
+  /* The Equities / With bonds switch rules the whole row: parked bonds are
+     counted in value and profit only when it says so. Drift stays equity-only
+     either way — it is the rebalance signal. */
+  const rows = state.wealthMode ? state.rows : state.rows.filter(r => !r.parked);
   const priced = rows.filter(r => r.priced);
   const basis = rows.reduce((a, r) => a + r.basis, 0);
   const unrlsd = priced.reduce((a, r) => a + r.pl, 0);
   const pricedBasis = priced.reduce((a, r) => a + r.basis, 0);
 
-  $("kpi-value").textContent = money(state.total);
-  const parkedVal = rows.filter(r => r.parked && r.priced).reduce((a, r) => a + r.v, 0);
-  $("kpi-value-sub").textContent = rows.length
-    ? (parkedVal
-        ? money(state.equityTotal) + " in equities · " + money(parkedVal) + " parked (outside weights)"
-        : priced.length < rows.length
-          ? money(state.total) + " across " + priced.length + " of " + rows.length + " positions — the rest are unpriced"
-          : "at " + (rows[0] && rows[0].as_of_kind === "close" ? "the last close" : "current market prices"))
-    : "nothing held yet";
+  $("kpi-value").textContent = money(state.wealthMode ? state.total : state.equityTotal);
+  const parkedVal = state.rows.filter(r => r.parked && r.priced).reduce((a, r) => a + r.v, 0);
+  const when = rows[0] && rows[0].as_of_kind === "close" ? "the last close" : "current market prices";
+  $("kpi-value-sub").textContent = !rows.length
+    ? "nothing held yet"
+    : priced.length < rows.length
+      ? "across " + priced.length + " of " + rows.length + " positions — the rest are unpriced"
+      : !parkedVal
+        ? "at " + when
+        : state.wealthMode
+          ? money(state.equityTotal) + " in equities · " + money(parkedVal) + " in bonds"
+          : "equities only, " + money(parkedVal) + " in bonds left out · at " + when;
 
   const el = $("kpi-unrealised");
   el.textContent = "";
@@ -269,15 +339,16 @@ function renderKpis(state) {
   /* The cost basis lost its own card to Realised profit and is reported here,
      which is the only place it was ever read as anything but a lone total:
      it is the thing unrealised profit is measured against. */
+  const paidSum = rows.reduce((a, r) => a + r.paid, 0);
   $("kpi-unrealised-sub").textContent = basis
-    ? "against " + money(basis) + " invested · " +
+    ? "against " + money(paidSum) + " invested · " +
       shares(rows.reduce((a, r) => a + r.s, 0)) + " shares at the prices you paid for them"
     : "enter an average price to see profit";
 
   /* Deliberately computed from nothing on this screen: realised profit is a
      stored total, not a fold over the rows, because the sales that made it may
      have closed their positions. It is never added to the figure above it. */
-  const realised = SERVER.realised || 0;
+  const realised = realisedNow();
   const rel = $("kpi-realised");
   rel.textContent = realised ? money(realised, true) : money(0);
   rel.classList.toggle("gain", realised > 0);
@@ -285,6 +356,8 @@ function renderKpis(state) {
   $("kpi-realised-sub").textContent = realised
     ? "lifetime · locked in by sales"
     : "nothing sold in this portfolio yet";
+
+  renderReturns();
 
   const worst = rows.find(r => r.priced && !r.parked) || null;
   if (!worst || !rows.some(r => !r.parked)) {
@@ -296,16 +369,16 @@ function renderKpis(state) {
       worst.t + " · " + worst.w.toFixed(2) + "% now against a " + worst.target.toFixed(2) + "% target";
   }
 
-  $("btn-sell").disabled = !rows.length;
+  $("btn-sell").disabled = !state.rows.length;
 
   $("pf-title").textContent = SERVER.active_name;
   $("pf-name").textContent = SERVER.active_name;
   $("pf-avatar").textContent = (SERVER.active_name.trim()[0] || "P").toUpperCase();
-  const nParked = rows.filter(r => r.parked).length;
+  const nParked = state.rows.filter(r => r.parked).length;
   $("pf-sub").textContent = (nParked ? "US equities + parked bonds" : "US equities") +
-    " · USD · " + rows.length +
-    (rows.length === 1 ? " position" : " positions") + " · prices fetched on open";
-  $("tab-holdings-count").textContent = rows.length;
+    " · USD · " + state.rows.length +
+    (state.rows.length === 1 ? " position" : " positions") + " · prices fetched on open";
+  $("tab-holdings-count").textContent = POSITIONS.filter(p => allocWithBonds || !p.parked).length;
   $("data-file").textContent = SERVER.data_file;
 }
 
@@ -547,10 +620,13 @@ function toggleLots(ticker) {
 function renderTable(state) {
   const tbody = $("positions-tbody");
   tbody.textContent = "";
-  $("positions-empty").hidden = state.rows.length > 0;
+  /* Parked bonds are on this table only while the Equities / With bonds switch
+     says so. */
+  const shown = state.wealthMode ? state.rows : state.rows.filter(r => !r.parked);
+  $("positions-empty").hidden = shown.length > 0;
   const maxAbs = Math.max(...state.rows.filter(r => !r.parked).map(r => Math.abs(r.d || 0)), 0.01);
   paintSortHeaders("positions");
-  const sorted = sortRows("positions", state.rows, POSITION_COLUMNS);
+  const sorted = sortRows("positions", shown, POSITION_COLUMNS);
   const spec = SORT.positions;
   $("positions-hint").textContent = spec
     ? "sorted by " + POSITION_HINT[spec.key] +
@@ -605,7 +681,7 @@ function renderTable(state) {
           '<span class="n">' + r.t + "</span></span>" +
       "</div></button></td>" +
       '<td class="num">' + shares(r.s) + "</td>" +
-      '<td class="num">' + money(r.c) + '<span class="sub num">' + money(r.basis) + " paid</span></td>" +
+      '<td class="num">' + money(r.c) + '<span class="sub num">' + money(r.paid) + " paid</span></td>" +
       '<td class="num">' + (r.priced ? money(r.price) : '<span class="pending">no price</span>') +
         snapLine + "</td>" +
       '<td class="num">' + (r.priced ? money(r.v) : "—") + "</td>" +
@@ -688,7 +764,10 @@ function renderEditor() {
   const tbody = $("editor-tbody");
   tbody.textContent = "";
   paintSortHeaders("editor");
-  for (const p of sortRows("editor", POSITIONS, EDITOR_COLUMNS)) {
+  /* Parked bonds are listed here only while the Equities / With bonds switch
+     says so. They stay in POSITIONS either way, so saving never drops one. */
+  const listed = POSITIONS.filter(p => allocWithBonds || !p.parked);
+  for (const p of sortRows("editor", listed, EDITOR_COLUMNS)) {
     const tr = document.createElement("tr");
 
     const rail = document.createElement("td");
@@ -1696,6 +1775,16 @@ $("sell-ticker").addEventListener("change", () => { suggestSellPrice(); sellEffe
 $("sell-cancel").addEventListener("click", () => $("dlg-sell").close("cancel"));
 $("sell-close").addEventListener("click", () => $("dlg-sell").close("cancel"));
 $("btn-sell").addEventListener("click", () => openSell());
+$("cagr-method").addEventListener("change", (e) => {
+  cagrMethod = e.target.value;
+  localStorage.setItem("cagrMethod", cagrMethod);
+  render();
+});
+$("return-period").addEventListener("change", (e) => {
+  returnPeriod = e.target.value;
+  localStorage.setItem("returnPeriod", returnPeriod);
+  render();
+});
 
 $("dlg-sell").addEventListener("close", async () => {
   if ($("dlg-sell").returnValue !== "ok") return;
@@ -1875,9 +1964,35 @@ function setAllocMode(withBonds) {
   allocWithBonds = withBonds;
   localStorage.setItem("allocWithBonds", withBonds ? "1" : "0");
   render({ keepInputs: true });
+  renderEditor();          // the Holdings tab lists bonds only in With bonds
 }
 $("alloc-equities").addEventListener("click", () => setAllocMode(false));
 $("alloc-wealth").addEventListener("click", () => setAllocMode(true));
+
+/* ---------- "?" tooltips ---------- */
+(function () {
+  const tip = $("help-tip");
+  const show = (el) => {
+    tip.textContent = el.dataset.tip;
+    const r = el.getBoundingClientRect();
+    tip.dataset.on = "1";
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    const left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8));
+    const top = r.bottom + 8 + h > window.innerHeight ? r.top - h - 8 : r.bottom + 8;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  };
+  document.querySelectorAll(".help[title]").forEach((el) => {
+    el.dataset.tip = el.getAttribute("title");
+    el.removeAttribute("title");          // or the browser draws its own as well
+    el.tabIndex = 0;
+    el.setAttribute("aria-label", el.dataset.tip);
+    el.addEventListener("mouseenter", () => show(el));
+    el.addEventListener("focus", () => show(el));
+    el.addEventListener("mouseleave", () => { tip.dataset.on = "0"; });
+    el.addEventListener("blur", () => { tip.dataset.on = "0"; });
+  });
+})();
 
 $("btn-fetch").addEventListener("click", fetchPrices);
 $("banner-fetch").addEventListener("click", fetchPrices);

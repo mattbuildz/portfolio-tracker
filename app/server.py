@@ -37,7 +37,7 @@ import tempfile
 import threading
 import time
 import webbrowser
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -45,6 +45,7 @@ from urllib.parse import parse_qs, urlparse
 import bonds
 import launcher
 import positions
+import returns
 import prices as price_source
 import snapshot
 import store
@@ -192,10 +193,20 @@ CACHE = PriceCache()
 LAST_REQUEST = time.monotonic()
 
 
+def restate_bond_buy(tx: dict, specs: dict, rows: list[dict]) -> dict:
+    """A bond purchase at today's exchange rate, for the return figures (see bonds.unit_cost_at_rate)."""
+    ticker = str(tx.get("ticker", "")).strip().upper()
+    if ticker not in specs or tx.get("kind") != "buy":
+        return tx
+    row = next((r for r in rows if r["ticker"] == ticker and r["basis_fx"] and r["shares"]), None)
+    return tx if row is None else tx | {"price": row["basis_fx"] / row["shares"]}
+
+
 def state_payload() -> dict:
     state = store.load()
     active = store.active_portfolio(state)
-    parked = set(store.bond_specs(state))
+    specs = store.bond_specs(state)
+    parked = set(specs)
     rows = []
     for h in store.holdings(active):
         quote = CACHE.price_for(h["ticker"])
@@ -203,6 +214,8 @@ def state_payload() -> dict:
         value = price * h["shares"] if price is not None else None
         basis = h["avg_price"] * h["shares"]
         is_parked = h["ticker"] in parked
+        unit = bonds.unit_cost_at_rate(specs.get(h["ticker"]), price) if is_parked else None
+        basis_fx = unit * h["shares"] if unit else None
         rows.append({
             **h,
             # A parked bond has no place in allocation policy — force target off
@@ -215,7 +228,10 @@ def state_payload() -> dict:
             "source": quote["source"] if quote else None,
             "value": value,
             "basis": basis,
-            "pl": (value - basis) if value is not None else None,
+            # A bond bought in PLN is judged by what it earned, not by the zloty:
+            # its cost restated at today's rate, so only the interest is profit.
+            "basis_fx": basis_fx,
+            "pl": (value - (basis if basis_fx is None else basis_fx)) if value is not None else None,
         })
     snap = CACHE.snapshot()
     # What is unpriced is a fact about the rows on screen, not about the last
@@ -235,6 +251,20 @@ def state_payload() -> dict:
               sorted(active["transactions"],
                      key=lambda t: (t.get("date") or "", t.get("id") or ""), reverse=True)]
 
+    # Overall profit and the annualised return, once with the parked bonds and
+    # once without them — the page's Equities / With bonds switch picks one. A
+    # holding with no quote is left out together with its transactions: valuing
+    # it at zero would book its whole cost as a loss. The page says how many.
+    left_out = {r["ticker"] for r in rows if r["price"] is None and r["shares"] > positions.DUST}
+    opening = float(active.get("realised_opening") or 0)   # no purchases behind it
+    returns_by_scope, realised_by_scope = {}, {}
+    for scope, skip in (("all", left_out), ("equities", left_out | parked)):
+        counted = [restate_bond_buy(t, specs, rows) for t in active["transactions"]
+                   if str(t.get("ticker", "")).strip().upper() not in skip]
+        value = sum(r["value"] for r in rows if r["value"] is not None and r["ticker"] not in skip)
+        returns_by_scope[scope] = returns.all_periods(counted, value, date.today(), opening)
+        realised_by_scope[scope] = positions.fold(counted)[1] + opening
+
     return {
         "portfolios": [{"id": pf["id"], "name": pf["name"], "count": len(store.holdings(pf))}
                        for pf in state["portfolios"]],
@@ -243,6 +273,9 @@ def state_payload() -> dict:
         "holdings": rows,
         "transactions": ledger,
         "realised": store.realised(active),
+        "realised_by_scope": realised_by_scope,
+        "returns": returns_by_scope,
+        "returns_left_out": sorted(left_out),
         "snapshot": snap,
         "data_file": str(store.path()),
         "demo": store.is_demo(),
