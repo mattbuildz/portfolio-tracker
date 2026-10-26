@@ -201,14 +201,24 @@ that dialog says that rather than promising an average price the fold might
 contradict.
 
 Realised profit is reported on its own KPI card, beside unrealised profit and
-never inside it. This is the rule `CONTEXT.md` is most insistent about: adding
-money you have locked in to paper gains that move every time the market does
-produces a figure that answers no question anyone has. The two are kept apart
-on screen, and are kept apart in the file — the realised total is stored per
+never inside it. The two parts stay apart on screen, and are kept apart in the file — the realised total is stored per
 portfolio, because once a position is closed there is no row left to compute it
 from — with one exception. Realised profit is now recomputed from the sales in
 the ledger like everything else; only a total carried over from a pre-ledger
 file is stored, because the sales behind it are gone.
+
+Below the KPI row, **Overall profit**, **Total return** and **CAGR** report the
+sum of the two on its own — see `returns.py` and `CONTEXT.md`. The **Equities / With bonds** switch above the KPI row rules all of it — value,
+both profits, return, CAGR and the allocation donut; drift stays equity-only.
+The period menu
+(since first purchase, 1, 3 or 5 years) is remembered in the browser. Holdings
+with no quote are left out of these three, with their transactions, and named
+under Overall profit.
+
+A bond bought in PLN is the one exception to "profit against the price you
+paid": its cost is restated at today's USD/PLN rate (`bonds.unit_cost_at_rate`),
+so its profit is the interest it accrued and not the zloty's move against the
+dollar. The ledger, the average price and the "paid" figure are untouched.
 
 That card replaced **Invested**, whose number now reads off the Unrealised
 profit card as the cost basis that figure is measured against — the only way it

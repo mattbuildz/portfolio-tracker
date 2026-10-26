@@ -15,6 +15,8 @@ python3 app/server.py
 
 The page lives at `http://127.0.0.1:8777/` — you can type it manually or bookmark it.
 
+First install, extras and what to do after moving the folder: [Setup in the README](README.md#setup).
+
 ## Is the server running?
 
 Most reliable — ask the server itself. `200` means it is up:
@@ -90,6 +92,58 @@ small.
 state after each one in the last two columns. You see how average price builds — from the
 first buy to what you have today. The last row always matches the collapsed row — same ledger
 replay, not a separate calculation.
+
+## Profit, return and CAGR
+
+Under the four KPI cards there is a second row:
+
+- **Overall profit** — realised plus unrealised. What the portfolio is worth today (open
+  positions at the latest prices) plus the money sales took out, minus everything you paid for
+  buys. The two parts are on the cards above it, so the sum never hides them.
+- **Total return** — overall profit divided by everything you paid for buys, over the period
+  chosen in the menu on that card: *since first purchase*, or the last 1, 3 or 5 years.
+- **CAGR** — the same result as a yearly rate. The menu on that card picks how:
+  - **Money-weighted (XIRR)**, the default: each buy and sale counts from its own date, so
+    money paid in last month is not credited with a year of growth.
+  - **Simple, annualised**: the total return carried to a year, as if all the money had been
+    in from day one. Usually lower than XIRR when you bought gradually and the portfolio rose.
+  - **TWR** is listed but greyed out: it needs the portfolio's value on every day money moved,
+    and the app keeps no price history.
+
+Reading it:
+
+- A window longer than your history (the last 5 years, with nine months of trades) is the same
+  as *since first purchase*, and the card says so. A window that lands *inside* your history
+  shows "—": it would need the value on that past date.
+- Under 30 days there is no CAGR. Under a year it is an extrapolation of a short stretch,
+  marked "read as indicative" — one good month moves it a lot.
+- **Total return and CAGR can look far apart** (11% against 26%, say). The first divides the
+  profit by all the money, the second knows that most of the money came in late. Neither is
+  wrong; they answer different questions.
+- Commission follows the rest of the app: taken off a sale's proceeds, not added to a buy's cost.
+- A holding with no quote is left out of all of this, with its transactions, and is named under
+  Overall profit.
+- Other tools can show other numbers. myfund.pl defaults to TWR, which ignores when and how much
+  you paid in; compare the nominal profit, not the percentage.
+
+Hover the **?** next to any card for a one-line definition.
+
+## Equities / With bonds
+
+The switch in the top bar (it appears only if you hold a savings bond) rules the whole
+Overview:
+
+| | Equities | With bonds |
+|---|---|---|
+| Value, Unrealised, Realised, Overall profit, Total return, CAGR | without the bond | with it |
+| Allocation donut | % of equities | % of total wealth |
+| Overview and Holdings tables | bond hidden | bond shown |
+| Drift, Rebalance | equities only, always | equities only, always |
+
+A bond bought in PLN is judged by its **interest**, not by the exchange rate: its cost is
+restated at today's USD/PLN rate, so a weaker zloty does not show an accruing bond as a loss.
+The ledger, the average price and the "paid" figure are untouched. The choice is remembered in
+the browser.
 
 ## Import from XTB
 
@@ -189,6 +243,8 @@ normal data folder, so they are still there after the demo is gone.
 | see what to buy for a given amount | **Rebalance** → *Contribution amount* → *See result* |
 | switch / add / remove a portfolio | portfolio name in the top left |
 | refresh quotes | **Fetch prices** |
+| include or leave out the bond | **Equities / With bonds** in the top bar |
+| change how return or CAGR is read | the menus on the **Total return** and **CAGR** cards |
 | read a company's profile or earnings call | **View** / **Profile** on its row |
 
 Average price is computed from your transactions — you do not type it and cannot override it.
@@ -197,9 +253,10 @@ network you only get the current quote.
 
 **A buy** moves average price (weighted average of old and new); **a sell does not** — a sale
 only reduces share count, and the gap between sale price and your average goes on the
-**Realised profit** tile. Those two numbers — realised and unrealised — are never summed;
-the sum would mean nothing useful: one is fixed, the other moves with every quote. Selling
-the whole position removes the row, but the profit it made stays.
+**Realised profit** tile. Realised and unrealised profit stay on their own tiles, because one is
+fixed and the other moves with every quote; their sum is **Overall profit**, a separate figure
+([above](#profit-return-and-cagr)). Selling the whole position removes the row, but the profit
+it made stays.
 
 ## Where data lives
 
@@ -309,6 +366,9 @@ Other path: `PORTFOLIO_SNAPSHOT_FILE=/path/file.md`, or put that path as the onl
 `snapshot-path.txt` in the data folder — the double-click launcher sees no shell variables,
 so the file is what makes it stick there.
 
+A PLN bond's unrealised profit in the export is its interest, measured the same way as on the
+screen (see *Equities / With bonds*).
+
 Facts only — how much you hold and how far from target. No verdicts.
 
 ## App launcher
@@ -328,6 +388,13 @@ bash scripts/make-desktop-shortcut.sh
 On Windows: `scripts\make-desktop-shortcut.bat`. Skip auto-install with
 `PORTFOLIO_NO_APP_INSTALL=1`.
 
+**The icon stops working after you move the repository, or after the Python it used is
+removed** (a Homebrew uninstall, a conda switch). The launcher has the folder and the `python3`
+path written into it, and the server cannot repair it, because it is the server that is not
+starting. The log says which one it is (`No such file or directory`, or `cannot execute`). Fix:
+run the script above again from the new location, for every copy you have (`~/Applications`
+and `~/Desktop`). macOS may ask once to allow access to the folder; allow it.
+
 
 ## What the other files do
 
@@ -337,9 +404,12 @@ On Windows: `scripts\make-desktop-shortcut.bat`. Skip auto-install with
 | `app/prices.py` | fetching prices and source order |
 | `app/store.py` | read and safe write of the transaction file |
 | `app/positions.py` | fold transactions into positions: shares, average price, realised profit |
+| `app/returns.py` | overall profit, total return and CAGR (XIRR) from the ledger and current value |
+| `app/bonds.py` | savings bonds priced from emission terms; their cost at today's exchange rate |
 | `app/snapshot.py` | the Markdown status export |
 | `app/transcripts.py` | earnings-call transcripts: API key, fetch, local cache |
 | `scripts/import-xtb.py` | import XTB statement |
+| `scripts/test_returns.py`, `scripts/test_import_xtb.py` | plain checks, run with `python3 scripts/<name>.py`; they print `ok` |
 | `app/static/index.html` | UI — structure and CSS |
 | `app/static/app.js` | UI logic: donut, drift, table, rebalance, transaction ledger, Buy and Sell |
 | `app/static/company.js` | Company tab: position, company profile, transcript reader |
@@ -352,6 +422,9 @@ On Windows: `scripts\make-desktop-shortcut.bat`. Skip auto-install with
 | Symptom | What to do |
 |---|---|
 | double-click does nothing | `tail -20 ~/Library/Logs/portfolio-app.log` — the reason is there |
+| double-click does nothing after moving the repo or changing Python | log says `No such file or directory` or `cannot execute` — rebuild the icon: `bash scripts/make-desktop-shortcut.sh ~/Desktop/Portfolio.app` |
+| macOS asked about folder access and nothing starts | allow it (Settings → Privacy & Security → Files and Folders), then double-click again |
+| a number looks wrong | compare the nominal profit with your broker's, not the percentage; TWR in other tools differs by design |
 | page does not open | check if the server is up (above); if not — launch the icon |
 | “Operation not permitted” in the log | `bash scripts/make-desktop-shortcut.sh` and approve the access prompt |
 | quotes do not fetch | the app says whether it is network or a bad ticker — the message distinguishes them |

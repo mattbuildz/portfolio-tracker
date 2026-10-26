@@ -13,7 +13,7 @@ A local portfolio app for people who already track positions at a broker and nee
 
 ![The demo portfolio: buy, sell, add a company, rebalance, and the company view](docs/demo.gif)
 
-The same walkthrough as a [full-resolution video](docs/demo.mp4). Everything in it, and every figure in the diagrams on this page, is the [demo portfolio](#try-the-demo): made-up trades, real prices.
+The same walkthrough as a [full-resolution video](docs/demo.mp4). Everything in it, and every figure in the diagrams on this page, is the [demo portfolio](#setup): made-up trades, real prices.
 
 It runs on your machine, on the Python standard library alone: no `pip install`, no build step, no npm, no account, no server but yours.
 
@@ -21,7 +21,7 @@ It runs on your machine, on the Python standard library alone: no `pip install`,
 python3 app/server.py   # Windows: python app/server.py
 ```
 
-Opens [http://127.0.0.1:8777/](http://127.0.0.1:8777/). What leaves the machine: ticker symbols, to ask what they cost; a ticker, a quarter and your Alpha Vantage API key, only when you click for an earnings-call transcript; and a currency code to NBP if you hold a savings bond. No amount is ever sent. [How it works](#how-it-works) draws every request.
+Opens [http://127.0.0.1:8777/](http://127.0.0.1:8777/). New here? [Setup](#setup) has the whole install in one place. What leaves the machine: ticker symbols, to ask what they cost; a ticker, a quarter and your Alpha Vantage API key, only when you click for an earnings-call transcript; and a currency code to NBP if you hold a savings bond. No amount is ever sent. [How it works](#how-it-works) draws every request.
 
 ## What the app does
 
@@ -31,7 +31,11 @@ Opens [http://127.0.0.1:8777/](http://127.0.0.1:8777/). What leaves the machine:
 - **Transactions.** The ledger, newest first, with what each sale realised. Strike a row and everything after it is recomputed.
 - **Company.** Opens from a holding: the position, its company profile if it has one, and earnings-call transcripts (see [Status](#status)).
 
-Realised and unrealised profit are shown apart and never summed: one is settled, the other moves with every quote. Commission is recorded but kept out of the average price, so it matches your broker's statement line for line; [`CONTEXT.md`](CONTEXT.md) explains why. Prices come from Yahoo, then CNBC, then the last known price, each labelled with its source and time.
+**Profit and return.** Four cards under the KPI row. *Realised profit* and *Unrealised profit* are shown apart: one is settled, the other moves with every quote. Their sum is *Overall profit*, with *Total return* (overall profit over everything you paid for buys) and *CAGR* beside it. CAGR is money-weighted (XIRR, each buy and sale counted from its own date) or simple (the total return carried to a year), and either can be read since your first purchase or over the last 1, 3 or 5 years. A window that reaches past your first purchase equals "since first purchase"; one that lands inside the history shows nothing, because the app keeps no price history. A CAGR from under a year of data is an extrapolation and says so on the card.
+
+**Equities / With bonds.** If you hold a Polish savings bond, a switch in the top bar decides whether it counts: in *Equities* the bond is left out of value, profits, return, CAGR, the donut and the tables; in *With bonds* it is in. Drift is always equities only. A bond bought in PLN is judged by the interest it accrued, not by the zloty's move against the dollar.
+
+Commission is recorded but kept out of the average price, so it matches your broker's statement line for line; [`CONTEXT.md`](CONTEXT.md) explains why. Prices come from Yahoo, then CNBC, then the last known price, each labelled with its source and time.
 
 ## Why this exists
 
@@ -52,7 +56,7 @@ The page talks only to the server on your machine, and the server keeps everythi
 
 ## Status
 
-Version 1, in use on a real portfolio. It works today: the ledger (buys, sells, splits), positions replayed from it, live quotes with a fallback chain, drift against target weights, contribute-only and full rebalance plans, XTB statement import, a company view, a read-only Markdown status export meant to sit in your notes (see [`how-to-use.md`](how-to-use.md)), and a double-click launcher on macOS, Windows and Linux.
+Version 1, in use on a real portfolio. It works today: the ledger (buys, sells, splits), positions replayed from it, live quotes with a fallback chain, overall profit, return and CAGR, drift against target weights, contribute-only and full rebalance plans, XTB statement import, a company view, a read-only Markdown status export meant to sit in your notes (see [`how-to-use.md`](how-to-use.md)), and a double-click launcher on macOS, Windows and Linux.
 
 The company view opens with *View* on any holding (*Profile* when the company has one):
 
@@ -62,19 +66,9 @@ The company view opens with *View* on any holding (*Profile* when the company ha
 
 What it does not do: no AI inside the app, and no advice. It never says what to buy.
 
-## Try the demo
-
-A made-up portfolio of five AI-hardware and data companies, with a company profile for Broadcom:
-
-```bash
-python3 app/server.py --demo
-```
-
-Opens [http://127.0.0.1:8778/](http://127.0.0.1:8778/) on its own port, on a temporary copy of [`demo/`](demo/) that is deleted when the app stops, so nothing you record in it touches the repository or your real portfolio. It writes no status export. Only an Alpha Vantage key and fetched transcripts outlive it.
-
 ## Getting started
 
-Start the server from the repository root (`python3 app/server.py`, or `python app/server.py` on Windows), then:
+With the server running ([Setup](#setup)):
 
 1. **Holdings → + Add company** to add a ticker and its target weight.
 2. **Buy…** / **Sell…** to record trades, or **Transactions → Record transaction…** for an old trade or a split.
@@ -82,7 +76,7 @@ Start the server from the repository root (`python3 app/server.py`, or `python a
 
 Already have an account statement from XTB? `python3 scripts/import-xtb.py statement.xlsx` shows what it would import without writing anything; add `--into "Main Portfolio"` to commit it (`python` on Windows).
 
-The first start also installs a double-clickable launcher for this checkout: `~/Applications/Portfolio.app` on macOS, `Portfolio.bat` in the Start Menu and on the Desktop on Windows, `~/.local/share/applications/portfolio.desktop` on Linux. `PORTFOLIO_NO_APP_INSTALL=1` skips it, set the same way as `PORTFOLIO_DATA_DIR` below. The server shuts itself down 30 minutes after you close the last tab, so nothing runs at login or overnight. [`how-to-use.md`](how-to-use.md) covers rebuilding the launcher and the rest of day-to-day use.
+The launcher, the optional extras and what to do after moving the folder are in [Setup](#setup); day-to-day use is in [`how-to-use.md`](how-to-use.md).
 
 ## Where your data lives
 
@@ -90,9 +84,61 @@ The first start also installs a double-clickable launcher for this checkout: `~/
 
 Put it somewhere else with `PORTFOLIO_DATA_DIR`: `PORTFOLIO_DATA_DIR=/some/path python3 app/server.py` on macOS and Linux, `set PORTFOLIO_DATA_DIR=C:\some\path` before `python app/server.py` on Windows cmd, `$env:PORTFOLIO_DATA_DIR = "C:\some\path"` in PowerShell. Your Alpha Vantage key (`secrets.json`) and fetched transcripts (`transcripts/`) sit in the data folder too; `PORTFOLIO_LOCAL_DIR` moves just those two, and `--demo` leaves it pointed at your normal folder so they survive the throwaway demo copy.
 
-## Requirements
+## Setup
 
-Python 3.9+ on macOS, Linux or Windows. The Yahoo price source is optional (without it the app runs on CNBC alone): `pip3 install curl_cffi` (`pip` on Windows).
+Everything below is the whole install. There is no `pip install`, no build step and no account.
+
+**1. You need Python 3.9 or newer.** Check with `python3 --version` (`python --version` on Windows). On macOS, `brew install python` or the installer from [python.org](https://www.python.org/downloads/) will do; Linux ships it.
+
+**2. Get the code.**
+
+```bash
+git clone https://github.com/mattbuildz/portfolio-tracker.git investment-portfolio
+cd investment-portfolio
+```
+
+Or download the repository as a ZIP and unpack it. The folder can live anywhere, but see [moving it](#moving-or-updating) before you move it later.
+
+**3. Start it.** Two ways, same app:
+
+```bash
+python3 app/server.py          # your own portfolio (Windows: python app/server.py)
+python3 app/server.py --demo   # a made-up one, to look around first
+```
+
+Your own: opens [http://127.0.0.1:8777/](http://127.0.0.1:8777/) in your browser, creates `data/portfolios.json` with one empty portfolio, and fetches prices in the background.
+
+The demo: five made-up AI-hardware and data companies, with a company profile for Broadcom, on its own port, [http://127.0.0.1:8778/](http://127.0.0.1:8778/). It works on a temporary copy of [`demo/`](demo/) that is deleted when the app stops, so nothing you record in it touches the repository or your real portfolio. It writes no status export, installs no launcher, and only an Alpha Vantage key and fetched transcripts outlive it. It can run next to the real app, since the ports differ.
+
+**4. Double-click launcher (automatic).** The first start also installs a launcher for this checkout: `~/Applications/Portfolio.app` on macOS, `Portfolio.bat` in the Start Menu and on the Desktop on Windows, `~/.local/share/applications/portfolio.desktop` on Linux. Skip it with `PORTFOLIO_NO_APP_INSTALL=1`. To put the app on the macOS Desktop as well:
+
+```bash
+bash scripts/make-desktop-shortcut.sh ~/Desktop/Portfolio.app
+```
+
+macOS may ask once whether the app can read the folder it lives in (Desktop, Documents). Say yes, or the icon silently does nothing. The server shuts itself down 30 minutes after you close the last tab, so nothing runs at login or overnight.
+
+**5. Optional extras.**
+
+| What | How | What you get |
+|---|---|---|
+| Yahoo as a price source | `pip3 install curl_cffi` (`pip` on Windows) | a second source; without it the app runs on CNBC alone |
+| Earnings-call transcripts | a free [Alpha Vantage key](https://www.alphavantage.co/support/#api-key), pasted into the Company tab | transcripts, fetched only when you click |
+| Markdown status export | nothing if `~/Documents` exists, otherwise set `PORTFOLIO_SNAPSHOT_FILE` | a read-only file of your positions that refreshes itself |
+| Your broker's history | `python3 scripts/import-xtb.py statement.xlsx` | an XTB statement imported into the ledger ([how-to-use.md](how-to-use.md#import-from-xtb)) |
+
+**6. Check that it works.** The page should load and show your portfolio, with a price snapshot time in the top right. From a terminal, `curl -s -o /dev/null -w "%{http_code}\n" localhost:8777/api/state` prints `200`, and `python3 scripts/test_returns.py` prints `ok`.
+
+### Moving or updating
+
+The launcher points at this exact folder and at the Python that built it, with both written into it. After you **move the repository, or the Python it used is gone** (a removed Homebrew install, say), double-clicking does nothing and the log says so (`~/Library/Logs/portfolio-app.log`). Rebuild it from the new location:
+
+```bash
+bash scripts/make-desktop-shortcut.sh                   # ~/Applications
+bash scripts/make-desktop-shortcut.sh ~/Desktop/Portfolio.app
+```
+
+Your data is `data/portfolios.json` inside the folder, so move it with the folder, and keep a copy elsewhere ([Where your data lives](#where-your-data-lives)). `git pull` updates the code and leaves `data/` alone: it is git-ignored.
 
 ## Documentation
 
