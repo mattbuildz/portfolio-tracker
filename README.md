@@ -29,9 +29,10 @@ Opens [http://127.0.0.1:8777/](http://127.0.0.1:8777/). New here? [Setup](#setup
 - **Rebalance.** A target weight per company and a plan to reach it: contribute-only, which never sells, or full.
 - **Holdings.** One row per company. The only thing you type is the target weight.
 - **Transactions.** The ledger, newest first, with what each sale realised. Strike a row and everything after it is recomputed.
+- **Performance.** Three charts from daily closes (CNBC, fetched when you open the tab, about two years back at most; WIG20 converted to dollars at the ECB rate): the time-weighted price return (without dividends) against the S&P 500, NASDAQ 100, WIG20 and a flat 5% a year; the value of what you hold against the net money paid in (dividends and interest lower it, as at myfund); and the profit between them, day by day. A bond and any ticker CNBC does not know are left out and named under the first chart.
 - **Company.** Opens from a holding: the position, its company profile if it has one, and earnings-call transcripts (see [Status](#status)).
 
-**Profit and return.** Four cards under the KPI row. *Realised profit* and *Unrealised profit* are shown apart: one is settled, the other moves with every quote. Their sum is *Overall profit*, with *Total return* (overall profit over everything you paid for buys) and *CAGR* beside it. CAGR is money-weighted (XIRR, each buy and sale counted from its own date) or simple (the total return carried to a year), and either can be read since your first purchase or over the last 1, 3 or 5 years. A window that reaches past your first purchase equals "since first purchase"; one that lands inside the history shows nothing, because the app keeps no price history. A CAGR from under a year of data is an extrapolation and says so on the card.
+**Profit and return.** Four cards under the KPI row. *Realised profit* and *Unrealised profit* are shown apart: one is settled, the other moves with every quote. Their sum, with dividends and interest net of tax (*income*, imported from your XTB statement), is *Overall profit*, with *Total return* (overall profit over everything you paid for buys) and *CAGR* beside it. CAGR is money-weighted (XIRR, each buy, sale and income payment counted from its own date) or simple (the total return carried to a year), and either can be read since your first purchase or over the last 1, 3 or 5 years. A window that reaches past your first purchase equals "since first purchase"; one that lands inside the history shows nothing, because the app keeps no price history. A CAGR from under a year of data is an extrapolation and says so on the card.
 
 **Equities / With bonds.** If you hold a Polish savings bond, a switch in the top bar decides whether it counts: in *Equities* the bond is left out of value, profits, return, CAGR, the donut and the tables; in *With bonds* it is in. Drift is always equities only. A bond bought in PLN is judged by the interest it accrued, not by the zloty's move against the dollar.
 
@@ -56,7 +57,7 @@ The page talks only to the server on your machine, and the server keeps everythi
 
 ## Status
 
-Version 1, in use on a real portfolio. It works today: the ledger (buys, sells, splits), positions replayed from it, live quotes with a fallback chain, overall profit, return and CAGR, drift against target weights, contribute-only and full rebalance plans, XTB statement import, a company view, a read-only Markdown status export meant to sit in your notes (see [`how-to-use.md`](how-to-use.md)), and a double-click launcher on macOS, Windows and Linux.
+Version 1, in use on a real portfolio. It works today: the ledger (buys, sells, splits, income), positions replayed from it, live quotes with a fallback chain, overall profit, return and CAGR, drift against target weights, contribute-only and full rebalance plans, XTB statement import, a company view, a read-only Markdown status export meant to sit in your notes (see [`how-to-use.md`](how-to-use.md)), and a double-click launcher on macOS, Windows and Linux.
 
 The company view opens with *View* on any holding (*Profile* when the company has one):
 

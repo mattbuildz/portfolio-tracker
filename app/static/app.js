@@ -190,10 +190,10 @@ const TX_COLUMNS = {
   date:   { get: t => t.date || "", text: true },
   kind:   { get: t => t.kind, text: true },
   ticker: { get: t => t.ticker, text: true },
-  shares: { get: t => (t.kind === "split" ? t.ratio : t.shares) },
-  price:  { get: t => (t.kind === "split" ? null : t.price) },
-  fee:    { get: t => (t.kind === "split" ? null : t.fee || 0) },
-  amount: { get: t => (t.kind === "split" ? null : (t.shares || 0) * (t.price || 0)) },
+  shares: { get: t => (t.kind === "split" ? t.ratio : t.kind === "income" ? null : t.shares) },
+  price:  { get: t => (t.kind === "split" || t.kind === "income" ? null : t.price) },
+  fee:    { get: t => (t.kind === "split" || t.kind === "income" ? null : t.fee || 0) },
+  amount: { get: t => (t.kind === "split" ? null : t.kind === "income" ? t.amount : (t.shares || 0) * (t.price || 0)) },
 };
 const EDITOR_COLUMNS = {
   ticker: { get: p => p.t, text: true },
@@ -274,7 +274,8 @@ function renderReturns() {
   setSub("kpi-overall-sub", profit === null
     ? (r && r.note ? r.note : "nothing bought yet")
     : "realised " + money(realisedCounted(), true) + " · unrealised " +
-      money(profit - realisedCounted(), true) + leftNote);
+      money(profit - realisedCounted() - (r.income || 0), true) +
+      (r.income ? " · income " + money(r.income, true) : "") + leftNote);
 
   const ret = r ? r.return_pct : null;
   $("kpi-return").textContent = ret === null ? "—" : pct(ret, 2);
@@ -566,7 +567,7 @@ const EXPANDED = new Set();
    pair a running share count with a different row than the one it came from. */
 function lotsFor(ticker) {
   return (SERVER.transactions || [])
-    .filter(t => t.ticker === ticker)
+    .filter(t => t.ticker === ticker && t.kind !== "income")
     .slice()
     .sort((a, b) => (a.seq || 0) - (b.seq || 0));
 }
@@ -1335,6 +1336,7 @@ function render(opts) {
   refreshTargets(state);
   renderPreview(false);
   if (typeof afterRender === "function") afterRender(state);   // company.js
+  if (typeof refreshPerformance === "function") refreshPerformance();   // performance.js
 }
 
 /* ---------- tabs ---------- */
@@ -1344,13 +1346,17 @@ const TABS = ["overview", "rebalance", "holdings", "tx"];
    screen — shares, average price, realised profit — is folded out of this
    table, so it is also where a mistake gets corrected: strike the event and
    the derived numbers follow on their own. */
-const KIND_LABEL = { buy: "BUY", sell: "SELL", split: "SPLIT" };
+const KIND_LABEL = { buy: "BUY", sell: "SELL", split: "SPLIT", income: "INCOME" };
 
 function txAmountCell(t) {
   const td = document.createElement("td");
   if (t.kind === "split") {
     td.innerHTML = "—&nbsp;&nbsp;<span class=\"hint\">" + shares(t.ratio) +
                    " for 1 · no money moves</span>";
+    return td;
+  }
+  if (t.kind === "income") {
+    td.innerHTML = money(t.amount, true) + "&nbsp;&nbsp;<span class=\"hint\">net of tax · counts as profit</span>";
     return td;
   }
   const amount = (t.shares || 0) * (t.price || 0);
@@ -1397,16 +1403,17 @@ function renderTransactions() {
 
     const tkr = document.createElement("td");
     tkr.className = "tkr";
-    tkr.textContent = t.ticker;
+    tkr.textContent = t.ticker || (t.kind === "income" ? "interest" : "");
 
+    const noMoves = t.kind === "split" || t.kind === "income";
     const sh = document.createElement("td");
-    sh.textContent = t.kind === "split" ? "×" + shares(t.ratio) : shares(t.shares);
+    sh.textContent = t.kind === "split" ? "×" + shares(t.ratio) : noMoves ? "—" : shares(t.shares);
 
     const price = document.createElement("td");
-    price.textContent = t.kind === "split" ? "—" : money(t.price);
+    price.textContent = noMoves ? "—" : money(t.price);
 
     const fee = document.createElement("td");
-    fee.textContent = t.kind === "split" ? "—" : money(t.fee || 0);
+    fee.textContent = noMoves ? "—" : money(t.fee || 0);
 
     const kill = document.createElement("td");
     kill.className = "strike";
@@ -1432,10 +1439,12 @@ function renderTransactions() {
 async function removeTransaction(t) {
   const what = t.kind === "split"
     ? "the " + shares(t.ratio) + "-for-1 split of " + t.ticker
+    : t.kind === "income"
+    ? "the " + money(t.amount, true) + " income from " + (t.ticker || "interest") + " on " + t.date
     : t.kind + " of " + shares(t.shares) + " " + t.ticker + " at " + money(t.price);
   const ok = await confirmDialog("Remove this transaction?",
-    "Striking " + what + " rewrites what follows it: shares, average price and " +
-    "realised profit are all recomputed from the transactions that remain.",
+    "Striking " + what + " rewrites what follows it: shares, average price, " +
+    "profit and return are all recomputed from the transactions that remain.",
     "Remove");
   if (!ok) return;
   try {

@@ -110,7 +110,7 @@ def profiled_tickers() -> list[str]:
 
 DATA_FILE = "portfolios.json"
 
-KINDS = ("buy", "sell", "split")
+KINDS = ("buy", "sell", "split", "income")
 
 
 def _blank_portfolio(name: str = "Main Portfolio") -> dict:
@@ -141,6 +141,8 @@ def new_transaction(fields: dict) -> dict:
     }
     if kind == "split":
         tx["ratio"] = float(fields.get("ratio") or 0)
+    elif kind == "income":
+        tx["amount"] = float(fields.get("amount") or 0)     # signed, net of any tax withheld
     else:
         tx["shares"] = float(fields.get("shares") or 0)
         tx["price"] = float(fields.get("price") or 0)

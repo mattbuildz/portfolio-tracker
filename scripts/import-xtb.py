@@ -14,6 +14,13 @@ there is really *two* transactions — the buy that opened it and the sell that
 closed it. Import only the first sheet and the sale vanishes, taking the
 realised profit with it.
 
+A third sheet, "Cash operations", holds what the positions do not: dividends,
+the tax withheld on them, and the interest on free funds with its own tax. Each
+day's amounts for one company (or for the account, in the case of interest)
+become one "income" row, net of tax. Deposits, withdrawals and transfers are
+the account's plumbing, not a return, and are left out; so are the purchases and
+sales it repeats from the position sheets.
+
 Nothing is written unless --into names a portfolio, and the data file is copied
 to a .backup first.
 """
@@ -22,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 import zipfile
@@ -89,9 +97,52 @@ def _date(serial: str | None) -> str:
     return (EXCEL_EPOCH + timedelta(days=value)).date().isoformat()
 
 
+def _is_listing(cell: str) -> bool:
+    """Whether a cell names an XTB listing such as "NVDA.US" or "1810.HK".
+
+    The Open positions sheet starts with summary lines whose amount column holds
+    "5954.65": a dot, but a number, not a listing. Taking it for one wrote a
+    company called "5954" into the ledger.
+    """
+    return re.fullmatch(r"[A-Z0-9\-]+\.[A-Z]{1,4}", cell.strip().upper()) is not None
+
+
 def _ticker(raw: str) -> str:
     # "NVDA.US" is XTB's name for the listing; the app keys on the symbol.
     return raw.strip().upper().split(".")[0]
+
+
+# What the cash sheet's "Type" column calls the operations that are income, and
+# the ones it repeats from the position sheets or that only move money around.
+INCOME_TYPES = {"dividend", "withholding tax", "free funds interest", "free funds interest tax"}
+PLUMBING = {"stock purchase", "stock sell", "deposit", "withdrawal", "transfer", "total", "type"}
+
+
+def income_rows(cash: list[dict[str, str]]) -> tuple[list[dict], list[str]]:
+    """One income row per day and company from the cash sheet, net of tax.
+
+    A dividend is paid per lot and its tax is a separate line, so a day can hold
+    a dozen of them; summed, they are the one payment the broker made.
+
+    shortcut: a row is identified by its day and company, so a statement that
+    adds a late line to a day already imported does not update it.
+    """
+    net: dict[tuple[str, str], float] = {}
+    warnings: list[str] = []
+    for row in cash:
+        kind = row.get("A", "").strip().lower()
+        if not kind or kind in PLUMBING or not row.get("E"):
+            continue
+        if kind not in INCOME_TYPES:
+            warnings.append(f"ignored a cash operation of type {row['A'].strip()!r}")
+            continue
+        ticker = _ticker(row["C"]) if row.get("C", "").strip() else ""
+        key = (_date(row.get("E")), ticker)
+        net[key] = net.get(key, 0.0) + _num(row.get("F"))
+    out = [{"date": day, "kind": "income", "ticker": ticker, "amount": round(amount, 2),
+            "note": f"XTB cash {day} {ticker or 'interest'}"}
+           for (day, ticker), amount in sorted(net.items()) if abs(amount) >= 0.005]
+    return out, sorted(set(warnings))
 
 
 # ------------------------------------------------------------------ extraction
@@ -101,7 +152,7 @@ def _sheet(book: dict[str, list[dict[str, str]]], column: str, title: str) -> li
 
 
 def extract(book: dict[str, list[dict[str, str]]]) -> tuple[list[dict], dict[str, str], list[str], dict]:
-    """Every buy and sell in the statement, plus company names for display."""
+    """Every buy, sell and income payment in the statement, plus company names for display."""
     transactions: list[dict] = []
     names: dict[str, str] = {}
     warnings: list[str] = []
@@ -116,7 +167,7 @@ def extract(book: dict[str, list[dict[str, str]]]) -> tuple[list[dict], dict[str
     # against, so it is kept aside instead of skipped.
     for row in _sheet(book, "B", "Instrument/Position"):
         ticker_cell = row.get("C", "")
-        if not ticker_cell or "." not in ticker_cell:
+        if not _is_listing(ticker_cell):
             continue
         ticker = _ticker(ticker_cell)
         kind = row.get("E", "").strip().upper()
@@ -141,7 +192,7 @@ def extract(book: dict[str, list[dict[str, str]]]) -> tuple[list[dict], dict[str
     # One row, two transactions: it opened and it closed.
     for row in _sheet(book, "X", "Position ID"):
         ticker_cell = row.get("B", "")
-        if not ticker_cell or "." not in ticker_cell or ticker_cell.strip().lower() == "ticker":
+        if not _is_listing(ticker_cell):
             continue
         kind = row.get("D", "").strip().upper()
         if not kind:
@@ -167,7 +218,8 @@ def extract(book: dict[str, list[dict[str, str]]]) -> tuple[list[dict], dict[str
             "broker_realised": _num(row.get("K")),
         })
 
-    return transactions, names, warnings, broker
+    income, income_warnings = income_rows(_sheet(book, "E", "Time"))
+    return transactions + income, names, warnings + income_warnings, broker
 
 
 # -------------------------------------------------------------------- checking
@@ -178,7 +230,9 @@ def report(transactions: list[dict], names: dict, broker: dict) -> bool:
 
     print(f"\n{len(transactions)} transactions "
           f"({sum(1 for t in transactions if t['kind'] == 'buy')} buys, "
-          f"{sum(1 for t in transactions if t['kind'] == 'sell')} sells)\n")
+          f"{sum(1 for t in transactions if t['kind'] == 'sell')} sells, "
+          f"{sum(1 for t in transactions if t['kind'] == 'income')} income, "
+          f"{sum(t['amount'] for t in transactions if t['kind'] == 'income'):,.2f} USD net)\n")
     print(f"{'':6}{'shares':>12}{'XTB':>12}{'avg price':>12}{'XTB':>10}{'':>4}")
 
     agreed = True
@@ -217,6 +271,9 @@ def merge(existing: list[dict], transactions: list[dict]) -> tuple[list[dict], l
     fresh, adopted = [], []
     for t in transactions:
         if _key(t) in seen:
+            continue
+        if t["kind"] == "income":
+            fresh.append(t)         # its note is its identity, and nobody types these in
             continue
         # A trade typed in before its statement arrived has no id to match on.
         # Same company, same side, same volume is that trade: the statement's

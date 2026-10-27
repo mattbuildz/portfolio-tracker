@@ -61,15 +61,21 @@ Profit or loss locked in by a sale. It never changes again.
 
 Shown on its own card, apart from unrealised profit. The sum of the two has its own name, **overall profit**, and its own place on screen.
 
+## Income
+
+What a holding paid out without being sold: a dividend, or the interest on free funds, **net of the tax withheld**. A fourth kind of transaction, with an amount instead of shares and a price. Interest belongs to no company and has no ticker.
+
+Imported from the broker's cash operations, one row per day and company. Not a deposit: money you pay into the account is not income, and is not recorded at all.
+
 ## Overall profit
 
-Realised plus unrealised profit: what the portfolio is worth today (open positions at current prices) plus the money sales took out, minus everything ever paid for buys. It moves with every price fetch.
+Realised plus unrealised profit plus income: what the portfolio is worth today (open positions at current prices) plus the money sales took out plus what it paid out, minus everything ever paid for buys. It moves with every price fetch.
 
 Earlier versions refused to add the two parts together; the sum answers a different question — how much richer than the money paid in — and is now reported, as a separate figure and never in place of its parts.
 
 ## Return and CAGR
 
-**Return** is overall profit over everything paid for buys. **CAGR** is the yearly rate that turns each dated buy and sale into today's value (money-weighted, XIRR), so late purchases count only for the time they were held. Both are measured over a period: since the first purchase, or the last 1, 3 or 5 years. A window that reaches past the first purchase is the same as since-first-purchase; one that lands inside the history needs a past valuation the app does not store, so it shows nothing rather than a guess.
+**Return** is overall profit over everything paid for buys. **CAGR** is the yearly rate that turns each dated buy, sale and income payment into today's value (money-weighted, XIRR), so late purchases count only for the time they were held. Both are measured over a period: since the first purchase, or the last 1, 3 or 5 years. A window that reaches past the first purchase is the same as since-first-purchase; one that lands inside the history needs a past valuation the app does not store, so it shows nothing rather than a guess.
 
 ## Price snapshot
 

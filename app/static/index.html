@@ -187,6 +187,7 @@
   .badge-buy   { color: var(--blue-ink); background: var(--blue-wash); }
   .badge-sell  { color: var(--red);      background: var(--red-wash); }
   .badge-split { color: var(--muted);    background: var(--sunken); }
+  .badge-income { color: var(--teal);    background: var(--teal-wash); }
   .realised-note { color: var(--teal); font-size: 12px; font-weight: 700; }
   .tx td.strike { text-align: right; padding-right: 24px; }
   .tx-empty { padding: 40px 24px; text-align: center; color: var(--muted); font-size: 13.5px; }
@@ -668,6 +669,7 @@
   .badge-buy   { color: var(--blue-ink); background: var(--blue-wash); }
   .badge-sell  { color: var(--red);      background: var(--red-wash); }
   .badge-split { color: var(--muted);    background: var(--sunken); }
+  .badge-income { color: var(--teal);    background: var(--teal-wash); }
   .realised-note { color: var(--teal); font-size: 12px; font-weight: 700; }
 
   /* ---------- dialogs ---------- */
@@ -762,6 +764,7 @@
       <button role="tab" id="tab-rebalance" aria-controls="panel-rebalance" aria-selected="false">Rebalance</button>
       <button role="tab" id="tab-holdings" aria-controls="panel-holdings" aria-selected="false">Holdings<span class="tab-count" id="tab-holdings-count">0</span></button>
       <button role="tab" id="tab-tx" aria-controls="panel-tx" aria-selected="false">Transactions<span class="tab-count" id="tab-tx-count">0</span></button>
+      <button role="tab" id="tab-performance" aria-controls="panel-performance" aria-selected="false">Performance</button>
       <button role="tab" id="tab-company" aria-controls="panel-company" aria-selected="false" hidden>Company<span class="tab-count" id="tab-company-ticker"></span></button>
     </div>
   </section>
@@ -807,7 +810,7 @@
            figure: CONTEXT.md forbids summing it with the unrealised one. -->
       <div class="card kpi">
         <div class="kpi-label"><span class="kpi-dot p" aria-hidden="true">✓</span> Realised profit
-          <span class="help" title="Locked in by sales. Never changes again. Added to unrealised profit it gives the Overall profit below.">?</span></div>
+          <span class="help" title="Locked in by sales. Never changes again. Added to unrealised profit and income it gives the Overall profit below.">?</span></div>
         <div class="kpi-value num" id="kpi-realised">$0.00</div>
         <div class="kpi-sub" id="kpi-realised-sub">lifetime · locked in by sales</div>
       </div>
@@ -824,7 +827,7 @@
     <div class="returns" id="returns">
       <div class="card kpi">
         <div class="kpi-label"><span><span class="kpi-dot t" aria-hidden="true">Σ</span> Overall profit
-          <span class="help" title="Realised + unrealised: what you have today (shares at current prices plus money taken out by sales) minus everything you paid for buys.">?</span></span></div>
+          <span class="help" title="Realised + unrealised + income: what you have today (shares at current prices, money taken out by sales, dividends and interest net of tax) minus everything you paid for buys.">?</span></span></div>
         <div class="kpi-value num" id="kpi-overall">$0.00</div>
         <div class="kpi-sub" id="kpi-overall-sub"></div>
       </div>
@@ -1061,6 +1064,50 @@
     </section>
   </div>
 
+  <!-- ========================== PERFORMANCE =========================== -->
+  <div role="tabpanel" id="panel-performance" aria-labelledby="tab-performance" hidden>
+    <section class="card" aria-labelledby="perf-label">
+      <div class="card-head">
+        <span class="card-title" id="perf-label">Return against benchmarks</span>
+        <span class="hint">time-weighted price return from daily closes; money you pay in or take out is not return, and neither are dividends</span>
+      </div>
+      <div class="perf-body">
+        <div class="perf-wrap">
+          <svg id="perf-chart" role="img" aria-labelledby="perf-label"></svg>
+          <div class="donut-tip" id="perf-tip"></div>
+        </div>
+        <div class="perf-legend" id="perf-legend"></div>
+        <p class="hint" id="perf-note"></p>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="val-label">
+      <div class="card-head">
+        <span class="card-title" id="val-label">Money paid in and value</span>
+        <span class="hint">value of what you hold at each close, against the net money paid in (buys minus sales)</span>
+      </div>
+      <div class="perf-body">
+        <div class="perf-wrap">
+          <svg id="val-chart" role="img" aria-labelledby="val-label"></svg>
+          <div class="donut-tip" id="val-tip"></div>
+        </div>
+        <div class="perf-legend" id="val-legend"></div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="pl-label">
+      <div class="card-head">
+        <span class="card-title" id="pl-label">Profit over time</span>
+        <span class="hint">value minus net money paid in: the overall profit of the Overview, day by day</span>
+      </div>
+      <div class="perf-body">
+        <div class="perf-wrap">
+          <svg id="pl-chart" role="img" aria-labelledby="pl-label"></svg>
+          <div class="donut-tip" id="pl-tip"></div>
+        </div>
+        <div class="perf-legend" id="pl-legend"></div>
+      </div>
+    </section>
+  </div>
+
   <!-- ============================= COMPANY ============================ -->
   <div role="tabpanel" id="panel-company" aria-labelledby="tab-company" hidden></div>
 
@@ -1240,6 +1287,7 @@
 
 <script src="/app.js"></script>
 <script src="/company.js"></script>
+<script src="/performance.js"></script>
 <script>
   document.getElementById("theme-toggle").addEventListener("click", function () {
     var root = document.documentElement;

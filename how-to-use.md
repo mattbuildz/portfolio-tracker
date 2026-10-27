@@ -97,9 +97,12 @@ replay, not a separate calculation.
 
 Under the four KPI cards there is a second row:
 
-- **Overall profit** — realised plus unrealised. What the portfolio is worth today (open
-  positions at the latest prices) plus the money sales took out, minus everything you paid for
-  buys. The two parts are on the cards above it, so the sum never hides them.
+- **Overall profit** — realised plus unrealised plus income. What the portfolio is worth today
+  (open positions at the latest prices) plus the money sales took out plus the dividends and
+  interest it paid (net of tax), minus everything you paid for buys. The parts are on the cards
+  above it and in its subtitle, so the sum never hides them. Income comes from the *Cash
+  operations* sheet of an XTB statement: import it like any other (`scripts/import-xtb.py`,
+  or the import in the app) and it shows in Transactions as `INCOME` rows.
 - **Total return** — overall profit divided by everything you paid for buys, over the period
   chosen in the menu on that card: *since first purchase*, or the last 1, 3 or 5 years.
 - **CAGR** — the same result as a yearly rate. The menu on that card picks how:
@@ -405,14 +408,16 @@ and `~/Desktop`). macOS may ask once to allow access to the folder; allow it.
 | `app/store.py` | read and safe write of the transaction file |
 | `app/positions.py` | fold transactions into positions: shares, average price, realised profit |
 | `app/returns.py` | overall profit, total return and CAGR (XIRR) from the ledger and current value |
+| `app/history.py` | daily value, money paid in and return against S&P 500, NASDAQ 100 and WIG20, for the Performance tab (CNBC closes, ECB USD/PLN) |
 | `app/bonds.py` | savings bonds priced from emission terms; their cost at today's exchange rate |
 | `app/snapshot.py` | the Markdown status export |
 | `app/transcripts.py` | earnings-call transcripts: API key, fetch, local cache |
 | `scripts/import-xtb.py` | import XTB statement |
-| `scripts/test_returns.py`, `scripts/test_import_xtb.py` | plain checks, run with `python3 scripts/<name>.py`; they print `ok` |
+| `scripts/test_returns.py`, `scripts/test_import_xtb.py`, `scripts/test_history.py` | plain checks, run with `python3 scripts/<name>.py`; they print `ok` |
 | `app/static/index.html` | UI — structure and CSS |
 | `app/static/app.js` | UI logic: donut, drift, table, rebalance, transaction ledger, Buy and Sell |
 | `app/static/company.js` | Company tab: position, company profile, transcript reader |
+| `app/static/performance.js` | Performance tab: three SVG line charts drawn from `/api/history` |
 | `scripts/make-desktop-shortcut.sh` | build `~/Applications/Portfolio.app` (macOS) |
 | `scripts/make-desktop-shortcut.bat` | Start Menu + Desktop launcher (Windows) |
 | `app/launcher.py` | auto-install of the launcher on first server start |

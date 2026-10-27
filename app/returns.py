@@ -3,15 +3,15 @@
 Pure, like positions.py: transactions and a current value go in, numbers come
 out — no disk, no network, no clock (the caller says what "today" is).
 
-**Overall profit** is realised plus unrealised profit, the one sum CONTEXT.md
-used to forbid: it answers "how much richer am I than the money I put in", and
-that is a question worth a number. The two parts are still reported apart
-everywhere else; this is the sum, not a replacement for them.
+**Overall profit** is realised plus unrealised profit plus income (dividends and
+interest, net of tax withheld): it answers "how much richer am I than the money
+I put in", and that is a question worth a number. The parts are still reported
+apart everywhere else; this is the sum, not a replacement for them.
 
-    overall profit = value now + money received from sales - money paid for buys
+    overall profit = value now + money from sales + income - money paid for buys
 
-which equals unrealised + realised, because a sale's realised profit is its
-proceeds minus the average cost of the shares that left. **Return** is that
+which equals unrealised + realised + income, because a sale's realised profit is
+its proceeds minus the average cost of the shares that left. **Return** is that
 profit over everything ever paid for buys.
 
 **Annualised return** is money-weighted (XIRR), not `(end / start) ** (1 / years)`.
@@ -50,9 +50,10 @@ def _parse(day) -> date | None:
         return None
 
 
-def _flows(transactions: list[dict]) -> tuple[list[tuple[date | None, float]], float, float]:
-    """Dated cash flows (buy negative, sale positive), total bought, total received."""
-    flows, bought, received = [], 0.0, 0.0
+def _flows(transactions: list[dict]) -> tuple[list[tuple[date | None, float]], float, float, float]:
+    """Dated cash flows (buy negative, sale and income positive), and the totals
+    bought, received from sales, and earned as income."""
+    flows, bought, received, income = [], 0.0, 0.0, 0.0
     held: dict[str, float] = {}      # shares before each transaction, to clamp a sale like the fold does
     for tx, book, _ in positions.replay(transactions):
         ticker = str(tx.get("ticker", "")).strip().upper()
@@ -71,7 +72,14 @@ def _flows(transactions: list[dict]) -> tuple[list[tuple[date | None, float]], f
             amount = min(qty, before) * price - fee
             received += amount
             flows.append((when, amount))
-    return flows, bought, received
+    # Not folded with the positions: interest belongs to no company, and the
+    # replay skips a row without a ticker.
+    for tx in transactions:
+        if str(tx.get("kind", "")).lower() == "income":
+            amount = float(tx.get("amount") or 0)
+            income += amount
+            flows.append((_parse(tx.get("date")), amount))
+    return flows, bought, received, income
 
 
 def xirr(flows: list[tuple[date, float]]) -> float | None:
@@ -107,11 +115,12 @@ def compute(transactions: list[dict], value: float, today: date,
     `value` is what the shares still held are worth now; the caller leaves out
     any holding it could not price, and its transactions with it.
     """
-    flows, bought, received = _flows(transactions)
-    profit = value + received - bought + realised_opening
+    flows, bought, received, income = _flows(transactions)
+    profit = value + received + income - bought + realised_opening
     out = {
         "period": period,
         "profit": profit,
+        "income": income,
         "invested": bought,
         "return_pct": profit / bought * 100 if bought > 0 else None,
         "cagr_pct": None,
@@ -140,7 +149,7 @@ def compute(transactions: list[dict], value: float, today: date,
             out["clamped"] = True
         else:
             out["since"] = window_start.isoformat()
-            out["profit"] = out["return_pct"] = None
+            out["profit"] = out["return_pct"] = out["income"] = None
             out["invested"] = None
             out["note"] = (f"needs the portfolio's value on {window_start.isoformat()} — "
                            "the app keeps no price history")

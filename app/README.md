@@ -208,7 +208,7 @@ the ledger like everything else; only a total carried over from a pre-ledger
 file is stored, because the sales behind it are gone.
 
 Below the KPI row, **Overall profit**, **Total return** and **CAGR** report the
-sum of the two on its own — see `returns.py` and `CONTEXT.md`. The **Equities / With bonds** switch above the KPI row rules all of it — value,
+sum of realised, unrealised and income (dividends and interest, net of tax) on its own — see `returns.py` and `CONTEXT.md`. The **Equities / With bonds** switch above the KPI row rules all of it — value,
 both profits, return, CAGR and the allocation donut; drift stays equity-only.
 The period menu
 (since first purchase, 1, 3 or 5 years) is remembered in the browser. Holdings

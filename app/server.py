@@ -43,6 +43,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import bonds
+import history
 import launcher
 import positions
 import returns
@@ -102,6 +103,7 @@ class PriceCache:
         being valued, and a missing NBP rate does not blank the equities.
         """
         self.mark_fetching()
+        history.clear()         # the charts must not outlive the quotes they sit next to
         specs = store.bond_specs(store.load())
         computed = {t: specs[t] for t in tickers if t in specs}
         quotes, unpriced, notes = self._bond_prices(computed)
@@ -328,6 +330,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._file("company.css", "text/css; charset=utf-8")
         if route == "/theme.css":
             return self._file("theme.css", "text/css; charset=utf-8")
+        if route == "/performance.js":
+            return self._file("performance.js", "text/javascript; charset=utf-8")
         if route == "/app.css":
             return self._file("app.css", "text/css; charset=utf-8")
         if route in ("/favicon.svg", "/favicon.ico"):
@@ -338,6 +342,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"ok": True})
         if route == "/api/state":
             return self._json(state_payload())
+        if route == "/api/history":
+            state = store.load()
+            return self._json(history.build(store.active_portfolio(state)["transactions"],
+                                            set(store.bond_specs(state))))
         query = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
         ticker = str(query.get("ticker", "")).strip().upper()
         if route == "/api/company":

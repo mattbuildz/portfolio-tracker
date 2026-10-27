@@ -125,3 +125,22 @@ table.positions.editor td { font-weight: 500; }
 #dlg-sell .dlg-foot { justify-content: flex-end; }
 #dlg-sell .dlg-foot .hint { margin-right: auto; color: var(--red); font-weight: 600; }
 #dlg-sell .dlg-head .btn { padding: 4px 10px; }
+
+/* ---------- performance chart ---------- */
+.perf-body { padding: 12px 24px 20px; }
+.perf-wrap { position: relative; }
+.perf-wrap svg { display: block; width: 100%; height: auto; }
+.perf-wrap svg .grid { stroke: var(--line); stroke-width: 1; }
+.perf-wrap svg .zero { stroke: var(--muted); stroke-width: 1; }
+.perf-wrap svg .tick { fill: var(--muted); font-size: 11px; }
+.perf-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; margin: 8px 0; }
+.perf-legend button {
+  display: flex; align-items: center; gap: 7px; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 12.5px; color: var(--body); padding: 2px 4px;
+}
+.perf-legend button[aria-pressed="false"] { opacity: .4; text-decoration: line-through; }
+.perf-legend i { width: 12px; height: 12px; border-radius: 3px; }
+.perf-tip-row { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
+.perf-tip-row i { width: 8px; height: 8px; border-radius: 2px; }
+/* follows the pointer; the script sets left, top and the side it opens on */
+.perf-wrap .donut-tip { min-width: 170px; }

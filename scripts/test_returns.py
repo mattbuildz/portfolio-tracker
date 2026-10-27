@@ -28,6 +28,14 @@ r = returns.compute(ledger, value, today)
 assert abs(r["profit"] - (unrealised + realised)) < 1e-9, (r, unrealised, realised)
 assert abs(r["invested"] - 100) < 1e-9
 
+# Income (dividends, interest, net of tax) is profit on top of the two parts, and
+# counts as money received on its own day. Interest has no ticker.
+earned = [tx("buy", 10, 10.0, "2026-01-01"), {"date": "2026-07-01", "kind": "income", "ticker": "", "amount": 5.0},
+          {"date": "2026-07-01", "kind": "income", "ticker": "AAA", "amount": 2.5}]
+r = returns.compute(earned, 110.0, today)
+assert abs(r["profit"] - 17.5) < 1e-9 and abs(r["income"] - 7.5) < 1e-9 and abs(r["return_pct"] - 17.5) < 1e-9, r
+assert r["cagr_pct"] > returns.compute([tx("buy", 10, 10.0, "2026-01-01")], 110.0, today)["cagr_pct"]
+
 # Late money has had less time: same 20 profit, but the second lot arrived late,
 # so the yearly rate is higher than profit / invested.
 late = [tx("buy", 10, 10.0, "2026-01-01"), tx("buy", 10, 10.0, "2026-10-01")]
